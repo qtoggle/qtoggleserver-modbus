@@ -1,4 +1,3 @@
-
 from typing import Any, Dict, Optional, List, Type, Union
 
 from qtoggleserver.peripherals import Peripheral, PeripheralPort

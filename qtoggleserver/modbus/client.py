@@ -1,12 +1,15 @@
-
 import abc
+import asyncio
 
 from typing import Any, Dict, Optional, List, Tuple, Type, Union
 
 from pymodbus.client.asynchronous import schedulers
-from pymodbus.client.asynchronous.serial import AsyncModbusSerialClient
+from pymodbus.client.asynchronous.async_io import ModbusClientProtocol
 from pymodbus.client.asynchronous.tcp import AsyncModbusTCPClient
 from pymodbus.client.sync import BaseModbusClient as BasePyModbusClient
+from pymodbus.factory import ClientDecoder
+from pymodbus.transaction import ModbusRtuFramer
+from serial_asyncio import create_serial_connection
 
 from qtoggleserver.core import ports as core_ports
 from qtoggleserver.lib import polled
@@ -16,18 +19,23 @@ from . import constants
 from .base import BaseModbus
 
 
-class BaseModbusClient(BaseModbus, polled.PolledPeripheral, metaclass=abc.ABCMeta):
+class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMeta):
     DEFAULT_POLL_INTERVAL = 5
 
     def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
+        polled.PolledPeripheral.__init__(self, **kwargs)
+        BaseModbus.__init__(self, **kwargs)
 
         self._values_by_type_and_address: Dict[str, Dict[int, Any]] = {}
         self._lengths_by_type_and_address: Dict[str, Dict[int, int]] = {}
         for port_detail in self.port_details.values():
+            address = port_detail['address']
+            # Convert string numbers (e.g. hex) to integer
+            if isinstance(address, str):
+                address = int(address, base=0)
             lengths_by_address = self._lengths_by_type_and_address.setdefault(port_detail['modbus_type'], {})
             length = port_detail.get('length', 1)
-            lengths_by_address[port_detail['address']] = length
+            lengths_by_address[address] = length
 
         # Merge intersecting address spaces
         for modbus_type, lengths_by_address in self._lengths_by_type_and_address.items():
@@ -48,10 +56,10 @@ class BaseModbusClient(BaseModbus, polled.PolledPeripheral, metaclass=abc.ABCMet
 
             self._lengths_by_type_and_address[modbus_type] = dict(lengths_by_address_items)
 
-        self._pymodbus_client: BasePyModbusClient = self.make_pymodbus_client()
+        self._pymodbus_client: Optional[BasePyModbusClient] = None
 
     @abc.abstractmethod
-    def make_pymodbus_client(self) -> BasePyModbusClient:
+    async def make_pymodbus_client(self) -> BasePyModbusClient:
         raise NotImplementedError()
 
     def _try_merge_address_length(
@@ -91,18 +99,19 @@ class BaseModbusClient(BaseModbus, polled.PolledPeripheral, metaclass=abc.ABCMet
 
     async def handle_enable(self) -> None:
         self.info('connecting to unit')
-        await self._pymodbus_client.connect()
+        self._pymodbus_client = await self.make_pymodbus_client()
+        #await self._pymodbus_client.connect()  TODO: do we need this for TCP client?
         await super().handle_enable()
 
     async def handle_disable(self) -> None:
         await super().handle_disable()
         self.info('disconnecting from unit')
         self._pymodbus_client.close()
+        self._pymodbus_client = None
 
     async def poll(self) -> None:
-        for modbus_type, entities_by_address in self._lengths_by_type_and_address.items():
-            for address, entities_info in entities_by_address.items():
-                length = entities_info['length']
+        for modbus_type, lengths_by_address in self._lengths_by_type_and_address.items():
+            for address, length in lengths_by_address.items():
                 if modbus_type == constants.MODBUS_TYPE_COIL:
                     self.debug('reading %d coils at %04X', length, address)
                     result = await self._pymodbus_client.read_coils(address, count=length, unit=self.unit_id)
@@ -123,6 +132,7 @@ class BaseModbusClient(BaseModbus, polled.PolledPeripheral, metaclass=abc.ABCMet
                     values = result.registers
                 else:
                     continue
+                # TODO: log read values
 
                 if result.function_code >= 0x80:
                     # TODO: handle ModbusExceptions
@@ -210,17 +220,25 @@ class ModbusSerialClient(BaseModbusClient):
 
         super().__init__(**kwargs)
 
-    def make_pymodbus_client(self) -> BasePyModbusClient:
-        return AsyncModbusSerialClient(
-            scheduler=schedulers.ASYNC_IO,
-            method=self.method,
-            port=self.serial_port,
+    async def make_pymodbus_client(self) -> BasePyModbusClient:
+        loop = asyncio.get_event_loop()
+        coro = create_serial_connection(
+            loop, self._make_protocol,
+            self.serial_port,
+            baudrate=self.serial_baud,
             stopbits=self.serial_stopbits,
             bytesize=self.serial_bytesize,
             parity=self.serial_parity,
-            baudrate=self.serial_baud,
-            timeout=self.timeout
+            timeout=self.timeout,
         )
+
+        _, protocol = await coro
+
+        return protocol
+
+    @staticmethod
+    def _make_protocol() -> ModbusClientProtocol:
+        return ModbusClientProtocol(framer=ModbusRtuFramer(ClientDecoder()))
 
 
 class ModbusTcpClient(BaseModbusClient):
@@ -240,7 +258,7 @@ class ModbusTcpClient(BaseModbusClient):
         kwargs.setdefault('method', self.DEFAULT_METHOD)
         super().__init__(**kwargs)
 
-    def make_pymodbus_client(self) -> BasePyModbusClient:
+    async def make_pymodbus_client(self) -> BasePyModbusClient:
         framer = self.FRAMERS_BY_METHOD[self.method]
         return AsyncModbusTCPClient(
             scheduler=schedulers.ASYNC_IO,

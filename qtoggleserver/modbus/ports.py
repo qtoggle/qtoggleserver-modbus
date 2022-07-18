@@ -1,7 +1,6 @@
-
 import struct
 
-from typing import cast
+from typing import cast, Optional, Union
 
 from qtoggleserver.core import ports as core_ports
 from qtoggleserver.core.typing import NullablePortValue, PortValue
@@ -35,15 +34,19 @@ class ModbusClientPort(polled.PolledPort):
         *,
         id: str,
         modbus_type: str,
-        address: int,
+        address: Union[int, str],
         length: int = 1,
+        writable: Optional[bool] = None,
         register_group_fmt: str = DEFAULT_REGISTER_GROUP_FMT,
         value_fmt: str = DEFAULT_VALUE_FMT,
         **kwargs
     ) -> None:
+        if isinstance(address, str):
+            address = int(address, base=0)
+
         # These will directly determine the port type & writable attributes
         self._type: str = TYPE_MAPPING[modbus_type]
-        self._writable: bool = WRITABLE_MAPPING[modbus_type]
+        self._writable: bool = writable if writable is not None else WRITABLE_MAPPING[modbus_type]
 
         self._modbus_type: str = modbus_type
         self._address: int = address
