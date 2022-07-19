@@ -100,7 +100,6 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
     async def handle_enable(self) -> None:
         self.info('connecting to unit')
         self._pymodbus_client = await self.make_pymodbus_client()
-        #await self._pymodbus_client.connect()  TODO: do we need this for TCP client?
         await super().handle_enable()
 
     async def handle_disable(self) -> None:
@@ -260,9 +259,20 @@ class ModbusTcpClient(BaseModbusClient):
 
     async def make_pymodbus_client(self) -> BasePyModbusClient:
         framer = self.FRAMERS_BY_METHOD[self.method]
-        return AsyncModbusTCPClient(
+        _, client = AsyncModbusTCPClient(
             scheduler=schedulers.ASYNC_IO,
             host=self.tcp_host,
             port=self.tcp_port,
             framer=framer
         )
+
+        client = await client
+
+        for _ in range(self.timeout * 10):
+            if client.protocol:
+                break
+            await asyncio.sleep(0.1)
+        else:
+            raise TimeoutError('Timeout connecting to Modbus device')
+
+        return client.protocol
