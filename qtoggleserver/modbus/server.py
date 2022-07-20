@@ -1,6 +1,6 @@
-from typing import Any, Dict, Optional, List, Type, Union
+# from typing import Any, Dict, Optional, List, Type, Union
 
-from qtoggleserver.peripherals import Peripheral, PeripheralPort
+from qtoggleserver.peripherals import Peripheral
 
 from .base import BaseModbus
 
