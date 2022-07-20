@@ -115,27 +115,33 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
                     self.debug('reading %d coils at %04X', length, address)
                     result = await self._pymodbus_client.read_coils(address, count=length, unit=self.unit_id)
                     values = result.bits
+                    values_str = ', '.join(str(v) for v in values).lower()
+                    self.debug('read coil values (%s) at %04X', values_str, address)
                 elif modbus_type == constants.MODBUS_TYPE_DISCRETE_INPUT:
                     self.debug('reading %d discrete inputs at %04X', length, address)
                     result = await self._pymodbus_client.read_discrete_inputs(address, count=length, unit=self.unit_id)
                     values = result.bits
+                    values_str = ', '.join(str(v) for v in values).lower()
+                    self.debug('read discrete input values (%s) at %04X', values_str, address)
                 elif modbus_type == constants.MODBUS_TYPE_INPUT_REGISTER:
                     self.debug('reading %d input registers at %04X', length, address)
                     result = await self._pymodbus_client.read_input_registers(address, count=length, unit=self.unit_id)
                     values = result.registers
+                    values_str = ', '.join(str(v) for v in values)
+                    self.debug('read input registers values (%s) at %04X', values_str, address)
                 elif modbus_type == constants.MODBUS_TYPE_HOLDING_REGISTER:
                     self.debug('reading %d holding registers at %04X', length, address)
                     result = await self._pymodbus_client.read_holding_registers(
                         address, count=length, unit=self.unit_id
                     )
                     values = result.registers
+                    values_str = ', '.join(str(v) for v in values)
+                    self.debug('read holding registers values (%s) at %04X', values_str, address)
                 else:
                     continue
-                # TODO: log read values
 
                 if result.function_code >= 0x80:
-                    # TODO: handle ModbusExceptions
-                    raise Exception('Got Modbus error code')
+                    raise Exception(f'Got Modbus error code {result.function_code}')
 
                 for i in range(length):
                     self._values_by_type_and_address.setdefault(modbus_type, {})[address + i] = values[i]
