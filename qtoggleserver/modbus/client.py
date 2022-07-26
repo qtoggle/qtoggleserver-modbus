@@ -74,15 +74,15 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
         if address1 <= address2:
             if end1 >= address2:
                 if end1 <= end2:  # address1, address2, end1, end2
-                    return address1, end2
+                    return address1, end2 - address1
                 else:  # address1, address2, end2, end1
-                    return address1, end1
+                    return address1, end1 - address1
         else:  # address1 > address2
             if end2 >= address1:
                 if end2 <= end1:  # address2, address1, end2, end1
-                    return address2, end1
+                    return address2, end1 - address2
                 else:  # address2, address1, end1, end2
-                    return address2, end2
+                    return address2, end2 - address2
 
     async def make_port_args(self) -> List[Union[Dict[str, Any], Type[core_ports.BasePort]]]:
         from .ports import ModbusClientPort
