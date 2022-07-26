@@ -118,8 +118,9 @@ peripherals = [
                 # number of successive registers mapped to the port, starting at `address` (defaults to `1`)
                 length = 2
                 writable = false            # by default is `null`, inferred from `modbus_type`
-                # `struct` format to use to group multiple register values into a byte array (defaults to `>h`)
-                register_group_fmt = ">hh"
+                # `struct` format to use to group multiple register values into a byte array (defaults to `>` followed
+                # by `H` times `length`)
+                register_group_fmt = ">HH"
                 # `struct` format to use to map register byte array to port value (defaults to `>h`)
                 value_fmt = ">i"
             }

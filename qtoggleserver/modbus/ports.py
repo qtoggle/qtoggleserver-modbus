@@ -26,7 +26,6 @@ WRITABLE_MAPPING = {
 
 
 class ModbusClientPort(polled.PolledPort):
-    DEFAULT_REGISTER_GROUP_FMT = '>h'
     DEFAULT_VALUE_FMT = '>h'
 
     def __init__(
@@ -37,7 +36,7 @@ class ModbusClientPort(polled.PolledPort):
         address: Union[int, str],
         length: int = 1,
         writable: Optional[bool] = None,
-        register_group_fmt: str = DEFAULT_REGISTER_GROUP_FMT,
+        register_group_fmt: Optional[str] = None,
         value_fmt: str = DEFAULT_VALUE_FMT,
         **kwargs
     ) -> None:
@@ -51,7 +50,7 @@ class ModbusClientPort(polled.PolledPort):
         self._modbus_type: str = modbus_type
         self._address: int = address
         self._length: int = length
-        self._register_group_fmt: str = register_group_fmt
+        self._register_group_fmt: str = register_group_fmt if register_group_fmt else f'>{"H" * length}'
         self._value_fmt: str = value_fmt
 
         super().__init__(id=id, **kwargs)
