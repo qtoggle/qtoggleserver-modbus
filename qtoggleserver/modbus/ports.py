@@ -24,6 +24,25 @@ WRITABLE_MAPPING = {
     constants.MODBUS_TYPE_HOLDING_REGISTER: True,
 }
 
+STRUCT_TYPE_MAPPING = {
+    'b': int,
+    'B': int,
+    '?': bool,
+    'h': int,
+    'H': int,
+    'i': int,
+    'I': int,
+    'l': int,
+    'L': int,
+    'q': int,
+    'Q': int,
+    'n': int,
+    'N': int,
+    'e': float,
+    'f': float,
+    'd': float,
+}
+
 
 class ModbusClientPort(polled.PolledPort):
     DEFAULT_VALUE_FMT = '>h'
@@ -90,6 +109,10 @@ class ModbusClientPort(polled.PolledPort):
         if self._modbus_type == constants.MODBUS_TYPE_COIL:
             await client.write_coil_value(self._address, value)
         elif self._modbus_type == constants.MODBUS_TYPE_HOLDING_REGISTER:
-            value_bytes = struct.pack(self._value_fmt, [value])
+            value_bytes = struct.pack(self._value_fmt, *self._adapt_value_to_fmt(value))
             values = list(struct.unpack(self._register_group_fmt, value_bytes))
             await client.write_holding_register_values(self._address, values)
+
+    def _adapt_value_to_fmt(self, value: PortValue) -> list:
+        type_ = STRUCT_TYPE_MAPPING.get(self._value_fmt[1], int)
+        return [type_(value)]
