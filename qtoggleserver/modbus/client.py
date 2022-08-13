@@ -22,9 +22,11 @@ from .base import BaseModbus
 class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMeta):
     DEFAULT_POLL_INTERVAL = 5
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, initial_delay: int = 0, **kwargs) -> None:
         polled.PolledPeripheral.__init__(self, **kwargs)
         BaseModbus.__init__(self, **kwargs)
+
+        self.initial_delay: int = initial_delay
 
         self._values_by_type_and_address: Dict[str, Dict[int, Any]] = {}
         self._lengths_by_type_and_address: Dict[str, Dict[int, int]] = {}
