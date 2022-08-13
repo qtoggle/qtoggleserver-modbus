@@ -4,7 +4,7 @@ import asyncio
 from typing import Any, Dict, Optional, List, Tuple, Type, Union
 
 from pymodbus.client.asynchronous import schedulers
-from pymodbus.client.asynchronous.async_io import ModbusClientProtocol
+from pymodbus.client.asynchronous.async_io import ModbusClientProtocol, ReconnectingAsyncioModbusTcpClient
 from pymodbus.client.asynchronous.tcp import AsyncModbusTCPClient
 from pymodbus.client.sync import BaseModbusClient as BasePyModbusClient
 from pymodbus.factory import ClientDecoder
@@ -84,6 +84,27 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
                 else:  # address2, address1, end1, end2
                     return address2, end2 - address2
 
+    async def ensure_client(self) -> None:
+        if self._pymodbus_client and getattr(self._pymodbus_client, 'transport', None):
+            return
+
+        self.info('connecting to unit')
+        self._pymodbus_client = await self.make_pymodbus_client()
+
+        if self.initial_delay:
+            self.debug('waiting %d seconds for initial delay', self.initial_delay)
+            await asyncio.sleep(self.initial_delay)
+
+    async def close_client(self) -> None:
+        self.info('disconnecting from unit')
+        try:
+            self._pymodbus_client.close()
+        except Exception:
+            # We don't care if connection closing fails - we're going to recreate the client from scratch anyway
+            pass
+
+        self._pymodbus_client = None
+
     async def make_port_args(self) -> List[Union[Dict[str, Any], Type[core_ports.BasePort]]]:
         from .ports import ModbusClientPort
 
@@ -98,45 +119,44 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
         return port_args
 
     async def handle_enable(self) -> None:
-        self.info('connecting to unit')
-        self._pymodbus_client = await self.make_pymodbus_client()
+        await self.ensure_client()
         await super().handle_enable()
 
     async def handle_disable(self) -> None:
         await super().handle_disable()
-        self.info('disconnecting from unit')
-        self._pymodbus_client.close()
-        self._pymodbus_client = None
+        await self.close_client()
 
     async def poll(self) -> None:
+        await self.ensure_client()
+
         for modbus_type, lengths_by_address in self._lengths_by_type_and_address.items():
             for address, length in lengths_by_address.items():
                 if modbus_type == constants.MODBUS_TYPE_COIL:
-                    self.debug('reading %d coils at %04X', length, address)
+                    self.debug('reading %d coils at 0x%04X', length, address)
                     result = await self._pymodbus_client.read_coils(address, count=length, unit=self.unit_id)
                     values = result.bits
                     values_str = ', '.join(str(v) for v in values).lower()
-                    self.debug('read coil values (%s) at %04X', values_str, address)
+                    self.debug('read coil values (%s) at 0x%04X', values_str, address)
                 elif modbus_type == constants.MODBUS_TYPE_DISCRETE_INPUT:
-                    self.debug('reading %d discrete inputs at %04X', length, address)
+                    self.debug('reading %d discrete inputs at 0x%04X', length, address)
                     result = await self._pymodbus_client.read_discrete_inputs(address, count=length, unit=self.unit_id)
                     values = result.bits
                     values_str = ', '.join(str(v) for v in values).lower()
-                    self.debug('read discrete input values (%s) at %04X', values_str, address)
+                    self.debug('read discrete input values (%s) at 0x%04X', values_str, address)
                 elif modbus_type == constants.MODBUS_TYPE_INPUT_REGISTER:
-                    self.debug('reading %d input registers at %04X', length, address)
+                    self.debug('reading %d input registers at 0x%04X', length, address)
                     result = await self._pymodbus_client.read_input_registers(address, count=length, unit=self.unit_id)
                     values = result.registers
                     values_str = ', '.join(str(v) for v in values)
-                    self.debug('read input registers values (%s) at %04X', values_str, address)
+                    self.debug('read input registers values (%s) at 0x%04X', values_str, address)
                 elif modbus_type == constants.MODBUS_TYPE_HOLDING_REGISTER:
-                    self.debug('reading %d holding registers at %04X', length, address)
+                    self.debug('reading %d holding registers at 0x%04X', length, address)
                     result = await self._pymodbus_client.read_holding_registers(
                         address, count=length, unit=self.unit_id
                     )
                     values = result.registers
                     values_str = ', '.join(str(v) for v in values)
-                    self.debug('read holding registers values (%s) at %04X', values_str, address)
+                    self.debug('read holding registers values (%s) at 0x%04X', values_str, address)
                 else:
                     continue
 
@@ -177,7 +197,7 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
         return values
 
     async def write_coil_value(self, address: int, value: bool) -> None:
-        self.debug('writing coil value %s to %04X', json_utils.dumps(value), address)
+        self.debug('writing coil value %s to 0x%04X', json_utils.dumps(value), address)
         if self.use_single_functions:
             await self._pymodbus_client.write_coil(address, value, unit=self.unit_id)
         else:
@@ -187,7 +207,7 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
 
     async def write_holding_register_values(self, address: int, values: List[int]) -> None:
         values_str = ', '.join(['%04X' % v for v in values])
-        self.debug('writing holding register values %s to %04X', values_str, address)
+        self.debug('writing holding register values %s to 0x%04X', values_str, address)
         if self.use_single_functions:
             for value in values:
                 await self._pymodbus_client.write_register(address, value, unit=self.unit_id)
@@ -259,26 +279,39 @@ class ModbusTcpClient(BaseModbusClient):
     ) -> None:
         self.tcp_host: str = tcp_host
         self.tcp_port: int = tcp_port
+        self.async_client: Optional[ReconnectingAsyncioModbusTcpClient] = None
 
         kwargs.setdefault('method', self.DEFAULT_METHOD)
         super().__init__(**kwargs)
 
     async def make_pymodbus_client(self) -> BasePyModbusClient:
-        framer = self.FRAMERS_BY_METHOD[self.method]
+        framer_cls = self.FRAMERS_BY_METHOD[self.method]
         _, client = AsyncModbusTCPClient(
             scheduler=schedulers.ASYNC_IO,
             host=self.tcp_host,
             port=self.tcp_port,
-            framer=framer
+            framer=framer_cls(ClientDecoder()),
+            timeout=self.timeout,
         )
 
-        client = await client
+        self.async_client = await client
+        self.async_client.delay_ms = 10000000  # practically disables the unwanted reconnection mechanism
 
         for _ in range(self.timeout * 10):
-            if client.protocol:
+            if self.async_client.protocol:
                 break
             await asyncio.sleep(0.1)
         else:
             raise TimeoutError('Timeout connecting to Modbus device')
 
-        return client.protocol
+        return self.async_client.protocol
+
+    def handle_offline(self) -> None:
+        # Automatically close and cleanup any existing client if peripheral goes offline. We want to start from scratch
+        # with a brand-new client.
+        asyncio.create_task(self.close_client())
+
+    async def close_client(self) -> None:
+        if self.async_client:
+            self.async_client.stop()
+        await super(self).close_client()
