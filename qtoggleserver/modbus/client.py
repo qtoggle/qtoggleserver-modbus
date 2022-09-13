@@ -3,9 +3,7 @@ import asyncio
 
 from typing import Any, Dict, Optional, List, Tuple, Type, Union
 
-from pymodbus.client.asynchronous import schedulers
-from pymodbus.client.asynchronous.async_io import ModbusClientProtocol, ReconnectingAsyncioModbusTcpClient
-from pymodbus.client.asynchronous.tcp import AsyncModbusTCPClient
+from pymodbus.client.asynchronous.async_io import ModbusClientProtocol, AsyncioModbusTcpClient
 from pymodbus.client.sync import BaseModbusClient as BasePyModbusClient
 from pymodbus.factory import ClientDecoder
 from pymodbus.transaction import ModbusRtuFramer
@@ -86,9 +84,9 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
                 else:  # address2, address1, end1, end2
                     return address2, end2 - address2
 
-    async def ensure_client(self) -> None:
+    async def ensure_client(self) -> bool:
         if self._pymodbus_client and getattr(self._pymodbus_client, 'transport', None):
-            return
+            return True
 
         self.info('connecting to unit')
         self._pymodbus_client = await self.make_pymodbus_client()
@@ -96,6 +94,12 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
         if self.initial_delay:
             self.debug('waiting %d seconds for initial delay', self.initial_delay)
             await asyncio.sleep(self.initial_delay)
+
+        if not getattr(self._pymodbus_client, 'transport', None):
+            self.warning('could not connect to unit')
+            return False
+
+        return True
 
     async def close_client(self) -> None:
         self.info('disconnecting from unit')
@@ -129,6 +133,9 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
         await self.close_client()
 
     async def poll(self) -> None:
+        if not await self.ensure_client():
+            raise Exception('Could not connect to Modbus unit')
+
         await self.ensure_client()
 
         for modbus_type, lengths_by_address in self._lengths_by_type_and_address.items():
@@ -281,30 +288,21 @@ class ModbusTcpClient(BaseModbusClient):
     ) -> None:
         self.tcp_host: str = tcp_host
         self.tcp_port: int = tcp_port
-        self.async_client: Optional[ReconnectingAsyncioModbusTcpClient] = None
+        self.async_client: Optional[AsyncioModbusTcpClient] = None
 
         kwargs.setdefault('method', self.DEFAULT_METHOD)
         super().__init__(**kwargs)
 
     async def make_pymodbus_client(self) -> BasePyModbusClient:
         framer_cls = self.FRAMERS_BY_METHOD[self.method]
-        _, client = AsyncModbusTCPClient(
-            scheduler=schedulers.ASYNC_IO,
+        self.async_client = AsyncioModbusTcpClient(
             host=self.tcp_host,
             port=self.tcp_port,
             framer=framer_cls(ClientDecoder()),
             timeout=self.timeout,
         )
 
-        self.async_client = await client
-        self.async_client.delay_ms = 10000000  # practically disables the unwanted reconnection mechanism
-
-        for _ in range(self.timeout * 10):
-            if self.async_client.protocol:
-                break
-            await asyncio.sleep(0.1)
-        else:
-            raise TimeoutError('Timeout connecting to Modbus device')
+        await self.async_client.connect()
 
         return self.async_client.protocol
 
@@ -316,4 +314,4 @@ class ModbusTcpClient(BaseModbusClient):
     async def close_client(self) -> None:
         if self.async_client:
             self.async_client.stop()
-        await super(self).close_client()
+        await super().close_client()
