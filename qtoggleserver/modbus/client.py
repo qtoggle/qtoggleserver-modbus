@@ -153,7 +153,9 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
 
                 elif modbus_type == constants.MODBUS_TYPE_DISCRETE_INPUT:
                     self.debug('reading %d discrete inputs at 0x%04X', length, address)
-                    response = await self._pymodbus_client.read_discrete_inputs(address, count=length, unit=self.unit_id)
+                    response = await self._pymodbus_client.read_discrete_inputs(
+                        address, count=length, unit=self.unit_id
+                    )
                     if isinstance(response, ExceptionResponse):
                         raise Exception(f'Got Modbus erroneous response: {response}')
 
@@ -164,7 +166,9 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
 
                 elif modbus_type == constants.MODBUS_TYPE_INPUT_REGISTER:
                     self.debug('reading %d input registers at 0x%04X', length, address)
-                    response = await self._pymodbus_client.read_input_registers(address, count=length, unit=self.unit_id)
+                    response = await self._pymodbus_client.read_input_registers(
+                        address, count=length, unit=self.unit_id
+                    )
                     if isinstance(response, ExceptionResponse):
                         raise Exception(f'Got Modbus erroneous response: {response}')
 
