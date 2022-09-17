@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional, List, Tuple, Type, Union
 from pymodbus.client.asynchronous.async_io import ModbusClientProtocol, AsyncioModbusTcpClient
 from pymodbus.client.sync import BaseModbusClient as BasePyModbusClient
 from pymodbus.factory import ClientDecoder
+from pymodbus.pdu import ExceptionResponse
 from pymodbus.transaction import ModbusRtuFramer
 from serial_asyncio import create_serial_connection
 
@@ -142,35 +143,49 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
             for address, length in lengths_by_address.items():
                 if modbus_type == constants.MODBUS_TYPE_COIL:
                     self.debug('reading %d coils at 0x%04X', length, address)
-                    result = await self._pymodbus_client.read_coils(address, count=length, unit=self.unit_id)
-                    values = result.bits
+                    response = await self._pymodbus_client.read_coils(address, count=length, unit=self.unit_id)
+                    if isinstance(response, ExceptionResponse):
+                        raise Exception(f'Got Modbus erroneous response: {response}')
+
+                    values = response.bits
                     values_str = ', '.join(str(v) for v in values).lower()
                     self.debug('read coil values (%s) at 0x%04X', values_str, address)
+
                 elif modbus_type == constants.MODBUS_TYPE_DISCRETE_INPUT:
                     self.debug('reading %d discrete inputs at 0x%04X', length, address)
-                    result = await self._pymodbus_client.read_discrete_inputs(address, count=length, unit=self.unit_id)
-                    values = result.bits
+                    response = await self._pymodbus_client.read_discrete_inputs(address, count=length, unit=self.unit_id)
+                    if isinstance(response, ExceptionResponse):
+                        raise Exception(f'Got Modbus erroneous response: {response}')
+
+                    self.error('got erroneous response: %s', str(response))
+                    values = response.bits
                     values_str = ', '.join(str(v) for v in values).lower()
                     self.debug('read discrete input values (%s) at 0x%04X', values_str, address)
+
                 elif modbus_type == constants.MODBUS_TYPE_INPUT_REGISTER:
                     self.debug('reading %d input registers at 0x%04X', length, address)
-                    result = await self._pymodbus_client.read_input_registers(address, count=length, unit=self.unit_id)
-                    values = result.registers
+                    response = await self._pymodbus_client.read_input_registers(address, count=length, unit=self.unit_id)
+                    if isinstance(response, ExceptionResponse):
+                        raise Exception(f'Got Modbus erroneous response: {response}')
+
+                    values = response.registers
                     values_str = ', '.join(str(v) for v in values)
                     self.debug('read input registers values (%s) at 0x%04X', values_str, address)
+
                 elif modbus_type == constants.MODBUS_TYPE_HOLDING_REGISTER:
                     self.debug('reading %d holding registers at 0x%04X', length, address)
-                    result = await self._pymodbus_client.read_holding_registers(
+                    response = await self._pymodbus_client.read_holding_registers(
                         address, count=length, unit=self.unit_id
                     )
-                    values = result.registers
+                    if isinstance(response, ExceptionResponse):
+                        raise Exception(f'Got Modbus erroneous response: {response}')
+
+                    values = response.registers
                     values_str = ', '.join(str(v) for v in values)
                     self.debug('read holding registers values (%s) at 0x%04X', values_str, address)
+
                 else:
                     continue
-
-                if result.function_code >= 0x80:
-                    raise Exception(f'Got Modbus error code {result.function_code}')
 
                 for i in range(length):
                     self._values_by_type_and_address.setdefault(modbus_type, {})[address + i] = values[i]
