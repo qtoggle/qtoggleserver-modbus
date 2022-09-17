@@ -187,6 +187,10 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
                 else:
                     continue
 
+                if len(values) < length:
+                    self.error('unexpected number of values read: %s < %s', len(values), length)
+                    continue
+
                 for i in range(length):
                     self._values_by_type_and_address.setdefault(modbus_type, {})[address + i] = values[i]
 
