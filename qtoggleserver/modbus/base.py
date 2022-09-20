@@ -1,6 +1,6 @@
 import logging
 
-from typing import Any, Dict
+from typing import Any, 
 
 from pymodbus.framer.ascii_framer import ModbusAsciiFramer
 from pymodbus.framer.binary_framer import ModbusBinaryFramer
@@ -26,14 +26,14 @@ class BaseModbus:
         unit_id: int = DEFAULT_UNIT_ID,
         timeout: int = DEFAULT_TIMEOUT,
         use_single_functions: bool = False,
-        ports: Dict[str, Dict[str, Any]],
+        ports: dict[str, dict[str, Any]],
         **kwargs
     ) -> None:
         self.method: str = method
         self.unit_id: int = unit_id
         self.timeout: int = timeout
         self.use_single_functions: bool = use_single_functions
-        self.port_details: Dict[str, Dict[str, Any]] = ports
+        self.port_details: dict[str, dict[str, Any]] = ports
 
         # TODO: use a common way of adjusting default logging settings from addons
         logging.getLogger('pymodbus').setLevel(logging.INFO)

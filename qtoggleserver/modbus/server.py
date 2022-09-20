@@ -1,4 +1,4 @@
-# from typing import Any, Dict, Optional, List, Type, Union
+# from typing import Any, Optional, Union
 
 from qtoggleserver.peripherals import Peripheral
 
@@ -28,7 +28,7 @@ class BaseModbusServer(BaseModbus, Peripheral):
 
         super().__init__(**kwargs)
 
-    # async def make_port_args(self) -> List[Union[Dict[str, Any], Type[core_ports.BasePort]]]:
+    # async def make_port_args(self) -> list[Union[dict[str, Any], type[core_ports.BasePort]]]:
     #     from .ports import GenericHTTPPort
     #
     #     port_args = []
@@ -63,8 +63,8 @@ class BaseModbusServer(BaseModbus, Peripheral):
     # async def write_port_value(
     #     self,
     #     port: core_ports.BasePort,
-    #     request_details: Dict[str, Any],
-    #     context: Dict[str, Any]
+    #     request_details: dict[str, Any],
+    #     context: dict[str, Any]
     # ) -> None:
     #
     #     details = request_details

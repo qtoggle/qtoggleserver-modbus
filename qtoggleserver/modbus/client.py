@@ -1,7 +1,7 @@
 import abc
 import asyncio
 
-from typing import Any, Dict, Optional, List, Tuple, Type, Union
+from typing import Any, Optional, Union
 
 from pymodbus.client.asynchronous.async_io import ModbusClientProtocol, AsyncioModbusTcpClient
 from pymodbus.client.sync import BaseModbusClient as BasePyModbusClient
@@ -27,8 +27,8 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
 
         self.initial_delay: int = initial_delay
 
-        self._values_by_type_and_address: Dict[str, Dict[int, Any]] = {}
-        self._lengths_by_type_and_address: Dict[str, Dict[int, int]] = {}
+        self._values_by_type_and_address: dict[str, dict[int, Any]] = {}
+        self._lengths_by_type_and_address: dict[str, dict[int, int]] = {}
         for port_detail in self.port_details.values():
             address = port_detail['address']
             # Convert string numbers (e.g. hex) to integer
@@ -69,7 +69,7 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
         length1: int,
         address2: int,
         length2: int
-    ) -> Optional[Tuple[int, int]]:
+    ) -> Optional[tuple[int, int]]:
         end1 = address1 + length1
         end2 = address2 + length2
         if address1 <= address2:
@@ -112,7 +112,7 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
 
         self._pymodbus_client = None
 
-    async def make_port_args(self) -> List[Union[Dict[str, Any], Type[core_ports.BasePort]]]:
+    async def make_port_args(self) -> list[Union[dict[str, Any], type[core_ports.BasePort]]]:
         from .ports import ModbusClientPort
 
         port_args = []
@@ -206,7 +206,7 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
         values_by_address = self._values_by_type_and_address.get(constants.MODBUS_TYPE_DISCRETE_INPUT, {})
         return values_by_address.get(address)
 
-    def get_last_input_register_values(self, address: int, length: int) -> Optional[List[int]]:
+    def get_last_input_register_values(self, address: int, length: int) -> Optional[list[int]]:
         values_by_address = self._values_by_type_and_address.get(constants.MODBUS_TYPE_INPUT_REGISTER, {})
         values = []
         for i in range(length):
@@ -217,7 +217,7 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
 
         return values
 
-    def get_last_holding_register_values(self, address: int, length: int) -> Optional[List[int]]:
+    def get_last_holding_register_values(self, address: int, length: int) -> Optional[list[int]]:
         values_by_address = self._values_by_type_and_address.get(constants.MODBUS_TYPE_HOLDING_REGISTER, {})
         values = []
         for i in range(length):
@@ -237,7 +237,7 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
 
         self._values_by_type_and_address[constants.MODBUS_TYPE_COIL][address] = value
 
-    async def write_holding_register_values(self, address: int, values: List[int]) -> None:
+    async def write_holding_register_values(self, address: int, values: list[int]) -> None:
         values_str = ', '.join(['%04X' % v for v in values])
         self.debug('writing holding register values %s to 0x%04X', values_str, address)
         if self.use_single_functions:
