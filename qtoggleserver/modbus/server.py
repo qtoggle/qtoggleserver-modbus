@@ -1,5 +1,3 @@
-# from typing import Any, Optional, Union
-
 from qtoggleserver.peripherals import Peripheral
 
 from .base import BaseModbus
@@ -29,36 +27,15 @@ class BaseModbusServer(BaseModbus, Peripheral):
         super().__init__(**kwargs)
 
     # async def make_port_args(self) -> list[Union[dict[str, Any], type[core_ports.BasePort]]]:
-    #     from .ports import GenericHTTPPort
-    #
     #     port_args = []
     #     for id_, details in self.port_details.items():
     #         port_args.append({
-    #             'driver': GenericHTTPPort,
+    #             'driver': ...,
     #             'id': id_,
     #             **details
     #         })
     #
     #     return port_args
-
-    # async def poll(self) -> None:
-    #     self.debug('read request %s %s', self.read_details['method'], self.read_details['url'])
-    #
-    #     async with aiohttp.ClientSession() as session:
-    #         request_params = await self.prepare_request(self.read_details, {})
-    #         async with session.request(**request_params) as response:
-    #             data = await response.read()
-    #
-    #             self.last_response_body = data.decode()
-    #             self.last_response_status = response.status
-    #             self.last_response_headers = dict(response.headers)
-    #
-    #             # Attempt to decode JSON but don't worry at all if that is not possible
-    #             try:
-    #                 self.last_response_json = json_utils.loads(self.last_response_body)
-    #
-    #             except Exception:
-    #                 self.last_response_json = None
 
     # async def write_port_value(
     #     self,
@@ -66,22 +43,4 @@ class BaseModbusServer(BaseModbus, Peripheral):
     #     request_details: dict[str, Any],
     #     context: dict[str, Any]
     # ) -> None:
-    #
-    #     details = request_details
-    #     for k, v in self.write_details.items():
-    #         details.setdefault(k, v)
-    #
-    #     self.debug('write request %s %s', details['method'], details['url'])
-    #
-    #     context = dict(context, **(await self.get_placeholders_context(port)))
-    #
-    #     async with aiohttp.ClientSession() as session:
-    #         request_params = await self.prepare_request(details, context)
-    #         async with session.request(**request_params) as response:
-    #             try:
-    #                 await response.read()
-    #
-    #             except Exception as e:
-    #                 self.error('write request failed: %s', e, exc_info=True)
-    #
-    #     await self.poll()
+    # ...

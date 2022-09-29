@@ -1,6 +1,6 @@
 import logging
 
-from typing import Any, 
+from typing import Any
 
 from pymodbus.framer.ascii_framer import ModbusAsciiFramer
 from pymodbus.framer.binary_framer import ModbusBinaryFramer
