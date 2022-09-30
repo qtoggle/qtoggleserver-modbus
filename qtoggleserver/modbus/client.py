@@ -150,7 +150,6 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
                     values = response.bits
                     values_str = ', '.join(str(v) for v in values).lower()
                     self.debug('read coil values (%s) at 0x%04X', values_str, address)
-
                 elif modbus_type == constants.MODBUS_TYPE_DISCRETE_INPUT:
                     self.debug('reading %d discrete inputs at 0x%04X', length, address)
                     response = await self._pymodbus_client.read_discrete_inputs(
@@ -163,7 +162,6 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
                     values = response.bits
                     values_str = ', '.join(str(v) for v in values).lower()
                     self.debug('read discrete input values (%s) at 0x%04X', values_str, address)
-
                 elif modbus_type == constants.MODBUS_TYPE_INPUT_REGISTER:
                     self.debug('reading %d input registers at 0x%04X', length, address)
                     response = await self._pymodbus_client.read_input_registers(
@@ -175,7 +173,6 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
                     values = response.registers
                     values_str = ', '.join(str(v) for v in values)
                     self.debug('read input registers values (%s) at 0x%04X', values_str, address)
-
                 elif modbus_type == constants.MODBUS_TYPE_HOLDING_REGISTER:
                     self.debug('reading %d holding registers at 0x%04X', length, address)
                     response = await self._pymodbus_client.read_holding_registers(
@@ -187,7 +184,6 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
                     values = response.registers
                     values_str = ', '.join(str(v) for v in values)
                     self.debug('read holding registers values (%s) at 0x%04X', values_str, address)
-
                 else:
                     continue
 

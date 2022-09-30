@@ -9,7 +9,7 @@ from pymodbus.framer.socket_framer import ModbusSocketFramer
 
 
 class BaseModbus:
-    DEFAULT_TIMEOUT = 10  # Seconds
+    DEFAULT_TIMEOUT = 10  # seconds
     DEFAULT_UNIT_ID = 0
 
     FRAMERS_BY_METHOD = {
