@@ -1,6 +1,6 @@
 import struct
 
-from typing import cast, Optional, Union
+from typing import Optional, Union, cast
 
 from qtoggleserver.core import ports as core_ports
 from qtoggleserver.core.typing import NullablePortValue, PortValue
