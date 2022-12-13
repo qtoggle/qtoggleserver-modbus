@@ -136,6 +136,7 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
 
         await self.ensure_client()
 
+        values_by_type_and_address: dict[str, dict[int, Any]] = {}
         for modbus_type, lengths_by_address in self._lengths_by_type_and_address.items():
             for address, length in lengths_by_address.items():
                 if modbus_type == constants.MODBUS_TYPE_COIL:
@@ -185,11 +186,12 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
                     continue
 
                 if len(values) < length:
-                    self.error('unexpected number of values read: %s < %s', len(values), length)
-                    continue
+                    raise Exception('Unexpected number of values read: %s < %s', len(values), length)
 
                 for i in range(length):
-                    self._values_by_type_and_address.setdefault(modbus_type, {})[address + i] = values[i]
+                    values_by_type_and_address.setdefault(modbus_type, {})[address + i] = values[i]
+
+            self._values_by_type_and_address = values_by_type_and_address
 
     def get_last_coil_value(self, address: int) -> Optional[bool]:
         values_by_address = self._values_by_type_and_address.get(constants.MODBUS_TYPE_COIL, {})
