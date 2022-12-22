@@ -1,5 +1,6 @@
 import abc
 import asyncio
+import logging
 
 from typing import Any, Optional, Union
 
@@ -16,6 +17,8 @@ from .base import BaseModbus
 
 class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMeta):
     DEFAULT_POLL_INTERVAL = 5
+
+    logger = logging.getLogger(__name__)
 
     def __init__(self, initial_delay: int = 0, **kwargs) -> None:
         polled.PolledPeripheral.__init__(self, **kwargs)

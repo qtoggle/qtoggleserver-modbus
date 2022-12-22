@@ -1,9 +1,13 @@
+import logging
+
 from qtoggleserver.peripherals import Peripheral
 
 from .base import BaseModbus
 
 
 class BaseModbusServer(BaseModbus, Peripheral):
+    logger = logging.getLogger(__name__)
+
     def __init__(
         self,
         *,
