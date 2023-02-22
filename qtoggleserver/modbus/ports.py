@@ -103,6 +103,7 @@ class ModbusClientPort(polled.PolledPort):
 
         return value
 
+    @core_ports.skip_write_unavailable
     async def write_value(self, value: PortValue) -> None:
         client = self.get_peripheral()
 
