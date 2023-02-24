@@ -98,6 +98,12 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
 
         if not self._pymodbus_client.connected:
             self.warning('could not connect to unit')
+            # Don't leave the client (partially) connected
+            try:
+                await self._pymodbus_client.close()
+            except Exception:
+                # We don't care if connection closing fails - we're going to recreate the client from scratch anyway
+                pass
             return False
 
         return True
@@ -136,8 +142,6 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
     async def poll(self) -> None:
         if not await self.ensure_client():
             raise Exception('Could not connect to Modbus unit')
-
-        await self.ensure_client()
 
         values_by_type_and_address: dict[str, dict[int, Any]] = {}
         for modbus_type, lengths_by_address in self._lengths_by_type_and_address.items():
@@ -314,6 +318,7 @@ class ModbusTcpClient(BaseModbusClient):
             port=self.tcp_port,
             framer=framer_cls,
             timeout=self.timeout,
+            reconnect_delay=0,
         )
 
     def handle_offline(self) -> None:
