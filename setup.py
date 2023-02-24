@@ -12,7 +12,7 @@ setup(
     packages=find_namespace_packages(),
 
     install_requires=[
-        'pymodbus>=3.0.0',
+        'pymodbus>=3.1.3',
         'pyserial-asyncio',
     ]
 )
