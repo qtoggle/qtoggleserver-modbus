@@ -97,6 +97,27 @@ peripherals = [
 ...
 ```
 
+### Passive Tcpdump Client
+
+##### `qtoggleserver.conf:`
+``` ini
+...
+peripherals = [
+    ...
+    {
+        driver = "qtoggleserver.modbus.ModbusTcpDumpClient"
+        port = 5020                     # TCP port to sniff
+        iface = "eth0"                  # network interface to sniff (defaults to `any`)
+        master_ip = "192.168.1.122"     # IP address of the master Modbus machine (optional) 
+        slave_ip = "192.168.1.123"      # IP address of the slave Modbus machine (optional)
+        tcpdumo = "/usr/bin/tcpdump"    # full path to the `tcpdump` binary (optional) 
+        # see below for common parameters
+    }
+    ...
+]
+...
+```
+
 ### Common Parameters
 
 The following parameters are common to all types of Modbus clients and servers:

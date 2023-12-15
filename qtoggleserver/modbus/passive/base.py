@@ -3,8 +3,8 @@ import asyncio
 
 from typing import List, Optional, Union
 
-from pymodbus import bit_read_message, bit_write_message, register_read_message, register_write_message
-from pymodbus.client import ModbusBaseClient as InternalModbusBaseClient
+from pymodbus import Framer, bit_read_message, bit_write_message, register_read_message, register_write_message
+from pymodbus.client.base import ModbusBaseClient as InternalModbusBaseClient
 
 
 class InternalPassiveException(Exception):
@@ -19,7 +19,7 @@ class InternalPassiveClient(InternalModbusBaseClient, metaclass=abc.ABCMeta):
         self._input_register_values: dict[int, int] = {}
         self._run_task: Optional[asyncio.Task] = None
 
-        super().__init__(xframer='ignored')
+        super().__init__(framer=Framer.RTU)
 
     @abc.abstractmethod
     async def run(self) -> None:
@@ -35,10 +35,9 @@ class InternalPassiveClient(InternalModbusBaseClient, metaclass=abc.ABCMeta):
         if not self._run_task:
             self._run_task = asyncio.create_task(self._run())
 
-    async def close(self) -> None:
+    def close(self, reconnect: bool = False) -> None:
         if self._run_task:
             self._run_task.cancel()
-            await self._run_task
             self._run_task = None
 
     @property

@@ -7,8 +7,8 @@ from typing import Any, Optional, Union
 from pymodbus.client import (
     AsyncModbusSerialClient as InternalAsyncModbusSerialClient,
     AsyncModbusTcpClient as InternalAsyncModbusTcpClient,
-    ModbusBaseClient as InternalModbusBaseClient,
 )
+from pymodbus.client.base import ModbusBaseClient as InternalModbusBaseClient
 from pymodbus.pdu import ExceptionResponse
 
 from qtoggleserver.core import ports as core_ports
@@ -101,11 +101,14 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
             self.debug('waiting %d seconds for initial delay', self.initial_delay)
             await asyncio.sleep(self.initial_delay)
 
+        while not self._pymodbus_client.connected:
+            await asyncio.sleep(0.1)
+
         if not self._pymodbus_client.connected:
             self.warning('could not connect to unit')
             # Don't leave the client (partially) connected
             try:
-                await self._pymodbus_client.close()
+                self._pymodbus_client.close()
             except Exception:
                 # We don't care if connection closing fails - we're going to recreate the client from scratch anyway
                 pass
@@ -113,10 +116,10 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
 
         return True
 
-    async def close_client(self) -> None:
+    def close_client(self) -> None:
         self.info('disconnecting from unit')
         try:
-            await self._pymodbus_client.close()
+            self._pymodbus_client.close()
         except Exception:
             # We don't care if connection closing fails - we're going to recreate the client from scratch anyway
             pass
@@ -142,7 +145,7 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
 
     async def handle_disable(self) -> None:
         await super().handle_disable()
-        await self.close_client()
+        self.close_client()
 
     async def poll(self) -> None:
         if not await self.ensure_client():
@@ -271,14 +274,14 @@ class ModbusSerialClient(BaseModbusClient):
         serial_baud: int = DEFAULT_SERIAL_BAUD,
         serial_stopbits: int = DEFAULT_SERIAL_STOPBITS,
         serial_bytesize: int = DEFAULT_SERIAL_BYTESIZE,
-        serial_parity: int = DEFAULT_SERIAL_PARITY,
+        serial_parity: str = DEFAULT_SERIAL_PARITY,
         **kwargs
     ) -> None:
         self.serial_port: str = serial_port
         self.serial_baud: int = serial_baud
         self.serial_stopbits: int = serial_stopbits
         self.serial_bytesize: int = serial_bytesize
-        self.serial_parity: int = serial_parity
+        self.serial_parity: str = serial_parity
 
         kwargs.setdefault('method', self.DEFAULT_METHOD)
 
@@ -329,7 +332,7 @@ class ModbusTcpClient(BaseModbusClient):
     def handle_offline(self) -> None:
         # Automatically close and cleanup any existing client if peripheral goes offline. We want to start from scratch
         # with a brand-new client.
-        asyncio.create_task(self.close_client())
+        self.close_client()
 
 
 class BasePassiveModbusClient(BaseModbusClient, metaclass=abc.ABCMeta):
