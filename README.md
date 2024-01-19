@@ -97,7 +97,7 @@ peripherals = [
 ...
 ```
 
-### Passive Tcpdump Client
+### Passive Serial Client
 
 ##### `qtoggleserver.conf:`
 ``` ini
@@ -105,12 +105,35 @@ peripherals = [
 peripherals = [
     ...
     {
-        driver = "qtoggleserver.modbus.ModbusTcpDumpClient"
+        driver = "qtoggleserver.modbus.PassiveModbusSerialClient"
+        serial_port = "/dev/ttyUSB0"
+        serial_baud = 9600              # this is the default
+        serial_stopbits = 1             # this is the default
+        serial_bytesize = 8             # this is the default
+        serial_parity = N               # `N`, `E` or `O`
+        # see below for common parameters
+    }
+    ...
+]
+...
+```
+
+### Passive TCP(dump) Client
+
+##### `qtoggleserver.conf:`
+``` ini
+...
+peripherals = [
+    ...
+    {
+        driver = "qtoggleserver.modbus.PassiveModbusTcpClient"
         port = 5020                     # TCP port to sniff
         iface = "eth0"                  # network interface to sniff (defaults to `any`)
         master_ip = "192.168.1.122"     # IP address of the master Modbus machine (optional) 
         slave_ip = "192.168.1.123"      # IP address of the slave Modbus machine (optional)
-        tcpdumo = "/usr/bin/tcpdump"    # full path to the `tcpdump` binary (optional) 
+        master_port = 5020              # TCP port of the master Modbus machine (optional) 
+        slave_port = 5021               # TCP port of the slave Modbus machine (optional)
+        tcpdump = "/usr/bin/tcpdump"    # full path to the `tcpdump` binary (optional) 
         # see below for common parameters
     }
     ...
