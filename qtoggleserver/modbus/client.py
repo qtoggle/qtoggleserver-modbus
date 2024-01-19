@@ -17,7 +17,8 @@ from qtoggleserver.utils import json as json_utils
 
 from . import constants
 from .base import BaseModbus
-from .passive import InternalTcpDumpClient
+from .passive.tcpdump import InternalTcpDumpClient
+from .passive.serial import InternalSerialClient
 
 
 class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMeta):
@@ -340,23 +341,62 @@ class BasePassiveModbusClient(BaseModbusClient, metaclass=abc.ABCMeta):
         super().__init__(method='ignored', **kwargs)
 
 
-class ModbusTcpDumpClient(BasePassiveModbusClient):
+class PassiveModbusSerialClient(BasePassiveModbusClient):
+    DEFAULT_SERIAL_BAUD = 9600
+    DEFAULT_SERIAL_STOPBITS = 1
+    DEFAULT_SERIAL_BYTESIZE = 8
+    DEFAULT_SERIAL_PARITY = 'N'
+
+    def __init__(
+        self,
+        *,
+        serial_port: str,
+        serial_baud: int = DEFAULT_SERIAL_BAUD,
+        serial_stopbits: int = DEFAULT_SERIAL_STOPBITS,
+        serial_bytesize: int = DEFAULT_SERIAL_BYTESIZE,
+        serial_parity: str = DEFAULT_SERIAL_PARITY,
+        **kwargs,
+    ) -> None:
+        self.serial_port: str = serial_port
+        self.serial_baud: int = serial_baud
+        self.serial_stopbits: int = serial_stopbits
+        self.serial_bytesize: int = serial_bytesize
+        self.serial_parity: str = serial_parity
+
+        super().__init__(**kwargs)
+
+    async def make_internal_client(self) -> InternalModbusBaseClient:
+        return InternalSerialClient(
+            serial_port=self.serial_port,
+            serial_baud=self.serial_baud,
+            serial_stopbits=self.serial_stopbits,
+            serial_bytesize=self.serial_bytesize,
+            serial_parity=self.serial_parity,
+            unit_id=self.unit_id,
+            timeout=self.timeout,
+            logger=self.logger,
+        )
+
+
+class PassiveModbusTcpClient(BasePassiveModbusClient):
     def __init__(
         self,
         *,
         port: int,
         iface: str = 'any',
-        unit_id: int = 0,
         master_ip: Optional[str] = None,
         slave_ip: Optional[str] = None,
+        master_port: Optional[int] = None,
+        slave_port: Optional[int] = None,
         tcpdump: Optional[str] = None,
         **kwargs,
     ) -> None:
         self.port: int = port
         self.iface: str = iface
-        self.unit_id: int = unit_id
         self.master_ip: Optional[str] = master_ip
         self.slave_ip: Optional[str] = slave_ip
+        self.master_port: Optional[int] = master_port
+        self.slave_port: Optional[int] = slave_port
         self.tcpdump: Optional[str] = tcpdump
 
         super().__init__(**kwargs)
@@ -368,6 +408,8 @@ class ModbusTcpDumpClient(BasePassiveModbusClient):
             unit_id=self.unit_id,
             master_ip=self.master_ip,
             slave_ip=self.slave_ip,
+            master_port=self.master_port,
+            slave_port=self.slave_port,
             tcpdump=self.tcpdump,
             logger=self.logger,
         )
