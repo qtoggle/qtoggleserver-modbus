@@ -12,6 +12,6 @@ setup(
     packages=find_namespace_packages(),
 
     install_requires=[
-        'pymodbus>=3.6',
+        'pymodbus>=3.6,<3.7',
     ]
 )

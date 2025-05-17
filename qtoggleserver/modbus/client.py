@@ -90,6 +90,8 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
                 else:  # address2, address1, end1, end2
                     return address2, end2 - address2
 
+        return None
+
     async def ensure_client(self) -> bool:
         if self._pymodbus_client and self._pymodbus_client.connected:
             return True
@@ -102,7 +104,9 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
             self.debug('waiting %d seconds for initial delay', self.initial_delay)
             await asyncio.sleep(self.initial_delay)
 
-        while not self._pymodbus_client.connected:
+        for _ in range(self.timeout * 10):
+            if self._pymodbus_client.connected:
+                break
             await asyncio.sleep(0.1)
 
         if not self._pymodbus_client.connected:
