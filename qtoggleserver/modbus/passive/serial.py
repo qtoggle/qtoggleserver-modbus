@@ -37,7 +37,7 @@ class InternalSerialClient(InternalPassiveClient):
         self.timeout: int = timeout
 
         super().__init__(logger)
-        self.set_logger_name('passive_serial')
+        self.set_logger_name("passive_serial")
 
     def make_serial(self) -> serial.Serial:
         return serial.Serial(
@@ -54,12 +54,12 @@ class InternalSerialClient(InternalPassiveClient):
         while True:
             try:
                 ser = self.make_serial()
-                buffer = b''
+                buffer = b""
                 for _ in range(self.timeout * 10):
                     buffer += ser.read_all()
                     await asyncio.sleep(0.1)
                 if buffer:
-                    self.debug('sniffed %d bytes' % len(buffer))
+                    self.debug("sniffed %d bytes" % len(buffer))
                     while True:
                         consumed_bytes = self._process_modbus_data(buffer)
                         if not consumed_bytes:
@@ -67,7 +67,7 @@ class InternalSerialClient(InternalPassiveClient):
                         buffer = buffer[consumed_bytes:]
 
             except asyncio.CancelledError:
-                self.debug('task stopped')
+                self.debug("task stopped")
                 break
 
     def _process_modbus_data(self, buffer: bytes) -> int:
@@ -85,9 +85,9 @@ class InternalSerialClient(InternalPassiveClient):
         # Try to see if we've got a response
         byte_count = buffer[2]
         if len(buffer) >= byte_count + 5:
-            crc = buffer[byte_count + 3:byte_count + 5]
-            if self.compute_crc(buffer[:byte_count + 3]) == crc:
-                frame = buffer[:byte_count + 5]
+            crc = buffer[byte_count + 3 : byte_count + 5]
+            if self.compute_crc(buffer[: byte_count + 3]) == crc:
+                frame = buffer[: byte_count + 5]
                 self._process_modbus_response(frame)
                 return len(frame)
 
@@ -102,7 +102,7 @@ class InternalSerialClient(InternalPassiveClient):
         return 0
 
     def _process_modbus_request(self, frame: bytes) -> None:
-        self.debug('got Modbus request: %s', binascii.hexlify(frame).decode())
+        self.debug("got Modbus request: %s", binascii.hexlify(frame).decode())
 
         function = frame[1]
         data = frame[2:-2]
@@ -116,7 +116,7 @@ class InternalSerialClient(InternalPassiveClient):
             self.process_read_input_registers_request(data)
 
     def _process_modbus_response(self, frame: bytes) -> None:
-        self.debug('got Modbus response: %s', binascii.hexlify(frame).decode())
+        self.debug("got Modbus response: %s", binascii.hexlify(frame).decode())
 
         function = frame[1]
         data = frame[2:-2]

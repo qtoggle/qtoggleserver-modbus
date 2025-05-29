@@ -11,13 +11,13 @@ class BaseModbusServer(BaseModbus, Peripheral):
     def __init__(
         self,
         *,
-        identity_vendor_name: str = '',
-        identity_product_code: str = '',
-        identity_major_minor_revision: str = '',
-        identity_vendor_url: str = '',
-        identity_product_name: str = '',
-        identity_model_name: str = '',
-        identity_user_application_name: str = '',
+        identity_vendor_name: str = "",
+        identity_product_code: str = "",
+        identity_major_minor_revision: str = "",
+        identity_vendor_url: str = "",
+        identity_product_name: str = "",
+        identity_model_name: str = "",
+        identity_user_application_name: str = "",
         **kwargs,
     ) -> None:
         self.identity_vendor_name: str = identity_vendor_name

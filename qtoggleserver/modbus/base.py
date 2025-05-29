@@ -13,10 +13,10 @@ class BaseModbus:
     DEFAULT_UNIT_ID = 0
 
     FRAMERS_BY_METHOD = {
-        'ascii': ModbusAsciiFramer,
-        'rtu': ModbusRtuFramer,
-        'binary': ModbusBinaryFramer,
-        'socket': ModbusSocketFramer,
+        "ascii": ModbusAsciiFramer,
+        "rtu": ModbusRtuFramer,
+        "binary": ModbusBinaryFramer,
+        "socket": ModbusSocketFramer,
     }
 
     def __init__(
@@ -27,7 +27,7 @@ class BaseModbus:
         timeout: int = DEFAULT_TIMEOUT,
         use_single_functions: bool = False,
         ports: dict[str, dict[str, Any]],
-        **kwargs
+        **kwargs,
     ) -> None:
         self.method: str = method
         self.unit_id: int = unit_id
@@ -36,4 +36,4 @@ class BaseModbus:
         self.port_details: dict[str, dict[str, Any]] = ports
 
         # TODO: use a common way of adjusting default logging settings from addons
-        logging.getLogger('pymodbus').setLevel(logging.INFO)
+        logging.getLogger("pymodbus").setLevel(logging.INFO)

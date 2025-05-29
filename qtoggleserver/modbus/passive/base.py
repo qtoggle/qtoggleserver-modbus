@@ -3,7 +3,7 @@ import asyncio
 import logging
 import math
 
-from typing import Any, List, Optional, Union
+from typing import Any
 
 from pymodbus import Framer, bit_read_message, bit_write_message, register_read_message, register_write_message
 from pymodbus.client.base import ModbusBaseClient as InternalModbusBaseClient
@@ -51,15 +51,15 @@ class InternalPassiveClient(InternalModbusBaseClient, logging_utils.LoggableMixi
         self._discrete_input_values: dict[int, bool] = {}
         self._holding_register_values: dict[int, int] = {}
         self._input_register_values: dict[int, int] = {}
-        self._run_task: Optional[asyncio.Task] = None
+        self._run_task: asyncio.Task | None = None
 
-        self._last_read_coils_request: Optional[dict[str, Any]] = None
-        self._last_read_discrete_inputs_request: Optional[dict[str, Any]] = None
-        self._last_read_holding_registers_request: Optional[dict[str, Any]] = None
-        self._last_read_input_registers_request: Optional[dict[str, Any]] = None
+        self._last_read_coils_request: dict[str, Any] | None = None
+        self._last_read_discrete_inputs_request: dict[str, Any] | None = None
+        self._last_read_holding_registers_request: dict[str, Any] | None = None
+        self._last_read_input_registers_request: dict[str, Any] | None = None
 
         InternalModbusBaseClient.__init__(self, framer=Framer.RTU)
-        logging_utils.LoggableMixin.__init__(self, 'passive', logger)
+        logging_utils.LoggableMixin.__init__(self, "passive", logger)
 
     @abc.abstractmethod
     async def run(self) -> None:
@@ -111,9 +111,7 @@ class InternalPassiveClient(InternalModbusBaseClient, logging_utils.LoggableMixi
     async def read_coils(
         self, address: int, count: int = 1, slave: int = 0, **kwargs
     ) -> bit_read_message.ReadCoilsResponse:
-        return bit_read_message.ReadCoilsResponse(
-            values=[self.get_coil_value(address + i) for i in range(count)]
-        )
+        return bit_read_message.ReadCoilsResponse(values=[self.get_coil_value(address + i) for i in range(count)])
 
     async def read_discrete_inputs(
         self, address: int, count: int = 1, slave: int = 0, **kwargs
@@ -139,168 +137,168 @@ class InternalPassiveClient(InternalModbusBaseClient, logging_utils.LoggableMixi
     async def write_coil(
         self, address: int, value: bool, slave: int = 0, **kwargs
     ) -> bit_write_message.WriteSingleCoilResponse:
-        raise InternalPassiveException('Operation not supported in passive mode')
+        raise InternalPassiveException("Operation not supported in passive mode")
 
     async def write_coils(
-        self, address: int, values: List[bool], slave: int = 0, **kwargs
+        self, address: int, values: list[bool], slave: int = 0, **kwargs
     ) -> bit_write_message.WriteMultipleCoilsResponse:
-        raise InternalPassiveException('Operation not supported in passive mode')
+        raise InternalPassiveException("Operation not supported in passive mode")
 
     async def write_register(
-        self, address: int, value: Union[int, float, str], slave: int = 0, **kwargs
+        self, address: int, value: int | float | str, slave: int = 0, **kwargs
     ) -> register_write_message.WriteSingleRegisterResponse:
-        raise InternalPassiveException('Operation not supported in passive mode')
+        raise InternalPassiveException("Operation not supported in passive mode")
 
     async def write_registers(
         self,
         address: int,
-        values: List[Union[int, float, str]],
+        values: list[int | float | str],
         slave: int = 0,
         **kwargs,
     ) -> register_write_message.WriteMultipleRegistersResponse:
-        raise InternalPassiveException('Operation not supported in passive mode')
+        raise InternalPassiveException("Operation not supported in passive mode")
 
     def process_read_coils_request(self, data: bytes) -> None:
         self._last_read_coils_request = {
-            'address': int.from_bytes(data[:2], byteorder='big', signed=False),
-            'count': int.from_bytes(data[2:4], byteorder='big', signed=False),
+            "address": int.from_bytes(data[:2], byteorder="big", signed=False),
+            "count": int.from_bytes(data[2:4], byteorder="big", signed=False),
         }
         self.debug(
-            'read coils request (address = %d, count = %d)',
-            self._last_read_coils_request['address'],
-            self._last_read_coils_request['count'],
+            "read coils request (address = %d, count = %d)",
+            self._last_read_coils_request["address"],
+            self._last_read_coils_request["count"],
         )
 
     def process_read_discrete_inputs_request(self, data: bytes) -> None:
         self._last_read_discrete_inputs_request = {
-            'address': int.from_bytes(data[:2], byteorder='big', signed=False),
-            'count': int.from_bytes(data[2:4], byteorder='big', signed=False),
+            "address": int.from_bytes(data[:2], byteorder="big", signed=False),
+            "count": int.from_bytes(data[2:4], byteorder="big", signed=False),
         }
         self.debug(
-            'read discrete inputs request (address = %d, count = %d)',
-            self._last_read_discrete_inputs_request['address'],
-            self._last_read_discrete_inputs_request['count'],
+            "read discrete inputs request (address = %d, count = %d)",
+            self._last_read_discrete_inputs_request["address"],
+            self._last_read_discrete_inputs_request["count"],
         )
 
     def process_read_holding_registers_request(self, data: bytes) -> None:
         self._last_read_holding_registers_request = {
-            'address': int.from_bytes(data[:2], byteorder='big', signed=False),
-            'count': int.from_bytes(data[2:4], byteorder='big', signed=False),
+            "address": int.from_bytes(data[:2], byteorder="big", signed=False),
+            "count": int.from_bytes(data[2:4], byteorder="big", signed=False),
         }
         self.debug(
-            'read holding registers request (address = %d, count = %d)',
-            self._last_read_holding_registers_request['address'],
-            self._last_read_holding_registers_request['count'],
+            "read holding registers request (address = %d, count = %d)",
+            self._last_read_holding_registers_request["address"],
+            self._last_read_holding_registers_request["count"],
         )
 
     def process_read_input_registers_request(self, data: bytes) -> None:
         self._last_read_input_registers_request = {
-            'address': int.from_bytes(data[:2], byteorder='big', signed=False),
-            'count': int.from_bytes(data[2:4], byteorder='big', signed=False),
+            "address": int.from_bytes(data[:2], byteorder="big", signed=False),
+            "count": int.from_bytes(data[2:4], byteorder="big", signed=False),
         }
         self.debug(
-            'read input registers request (address = %d, count = %d)',
-            self._last_read_input_registers_request['address'],
-            self._last_read_input_registers_request['count'],
+            "read input registers request (address = %d, count = %d)",
+            self._last_read_input_registers_request["address"],
+            self._last_read_input_registers_request["count"],
         )
 
     def process_read_coils_response(self, data: bytes) -> None:
         if not self._last_read_coils_request:
-            self.warning('ignoring read coils response without request')
+            self.warning("ignoring read coils response without request")
             return
 
         if len(data) < 1:
-            raise InvalidModbusFrame('Data too short (%s bytes)', len(data))
+            raise InvalidModbusFrame("Data too short (%s bytes)", len(data))
         byte_count = data[0]
         if len(data) != byte_count + 1:
-            raise InvalidModbusFrame('Unexpected number of data bytes (%s != %s)', len(data), byte_count)
-        expected_byte_count = math.ceil(self._last_read_coils_request['count'] / 8)
+            raise InvalidModbusFrame("Unexpected number of data bytes (%s != %s)", len(data), byte_count)
+        expected_byte_count = math.ceil(self._last_read_coils_request["count"] / 8)
         if expected_byte_count != byte_count:
-            self.warning('ignoring read coils response with different address count')
+            self.warning("ignoring read coils response with different address count")
             return
 
-        bits = int.from_bytes(data[1:], byteorder='little', signed=False)
-        bit_string = f'{bits:b}'
-        values = [b == '1' for b in reversed(bit_string)]
+        bits = int.from_bytes(data[1:], byteorder="little", signed=False)
+        bit_string = f"{bits:b}"
+        values = [b == "1" for b in reversed(bit_string)]
         for i, v in enumerate(values):
-            self.set_coil_value(self._last_read_coils_request['address'] + i, v)
+            self.set_coil_value(self._last_read_coils_request["address"] + i, v)
 
-        self.debug('read coils response (values = [%s])', ', '.join(str(v).lower() for v in values))
+        self.debug("read coils response (values = [%s])", ", ".join(str(v).lower() for v in values))
 
         self._last_read_coils_request = None
 
     def process_read_discrete_inputs_response(self, data: bytes) -> None:
         if not self._last_read_discrete_inputs_request:
-            self.warning('ignoring read discrete inputs response without request')
+            self.warning("ignoring read discrete inputs response without request")
             return
 
         if len(data) < 1:
-            raise InvalidModbusFrame('Data too short (%s bytes)', len(data))
+            raise InvalidModbusFrame("Data too short (%s bytes)", len(data))
         byte_count = data[0]
         if len(data) != byte_count + 1:
-            raise InvalidModbusFrame('Unexpected number of data bytes (%s != %s)', len(data), byte_count)
-        expected_byte_count = math.ceil(self._last_read_discrete_inputs_request['count'] / 8)
+            raise InvalidModbusFrame("Unexpected number of data bytes (%s != %s)", len(data), byte_count)
+        expected_byte_count = math.ceil(self._last_read_discrete_inputs_request["count"] / 8)
         if expected_byte_count != byte_count:
-            self.warning('ignoring read discrete inputs response with different address count')
+            self.warning("ignoring read discrete inputs response with different address count")
             return
 
-        bits = int.from_bytes(data[1:], byteorder='little', signed=False)
-        bit_string = f'{bits:b}'
-        values = [b == '1' for b in reversed(bit_string)]
+        bits = int.from_bytes(data[1:], byteorder="little", signed=False)
+        bit_string = f"{bits:b}"
+        values = [b == "1" for b in reversed(bit_string)]
         for i, v in enumerate(values):
-            self.set_discrete_input_value(self._last_read_discrete_inputs_request['address'] + i, v)
+            self.set_discrete_input_value(self._last_read_discrete_inputs_request["address"] + i, v)
 
-        self.debug('read discrete inputs response (values = [%s])', ', '.join(str(v).lower() for v in values))
+        self.debug("read discrete inputs response (values = [%s])", ", ".join(str(v).lower() for v in values))
 
         self._last_read_discrete_inputs_request = None
 
     def process_read_holding_registers_response(self, data: bytes) -> None:
         if not self._last_read_holding_registers_request:
-            self.warning('ignoring read holding registers response without request')
+            self.warning("ignoring read holding registers response without request")
             return
 
         if len(data) < 1:
-            raise InvalidModbusFrame('Data too short (%s bytes)', len(data))
+            raise InvalidModbusFrame("Data too short (%s bytes)", len(data))
         byte_count = data[0]
         if len(data) != byte_count + 1:
-            raise InvalidModbusFrame('Unexpected number of data bytes (%s != %s)', len(data), byte_count)
-        expected_byte_count = self._last_read_holding_registers_request['count'] * 2
+            raise InvalidModbusFrame("Unexpected number of data bytes (%s != %s)", len(data), byte_count)
+        expected_byte_count = self._last_read_holding_registers_request["count"] * 2
         if expected_byte_count != byte_count:
-            self.warning('ignoring read holding registers response with different address count')
+            self.warning("ignoring read holding registers response with different address count")
             return
 
         values = []
-        for i in range(self._last_read_holding_registers_request['count']):
-            value = int.from_bytes(data[i * 2 + 1: i * 2 + 3], byteorder='big', signed=False)
+        for i in range(self._last_read_holding_registers_request["count"]):
+            value = int.from_bytes(data[i * 2 + 1 : i * 2 + 3], byteorder="big", signed=False)
             values.append(value)
-            self.set_holding_register_value(self._last_read_holding_registers_request['address'] + i, value)
+            self.set_holding_register_value(self._last_read_holding_registers_request["address"] + i, value)
 
-        self.debug('read holding registers response (values = [%s])', ', '.join(f'0x{v:04X}' for v in values))
+        self.debug("read holding registers response (values = [%s])", ", ".join(f"0x{v:04X}" for v in values))
 
         self._last_read_holding_registers_request = None
 
     def process_read_input_registers_response(self, data: bytes) -> None:
         if not self._last_read_input_registers_request:
-            self.warning('ignoring read input registers response without request')
+            self.warning("ignoring read input registers response without request")
             return
 
         if len(data) < 1:
-            raise InvalidModbusFrame('Data too short (%s bytes)', len(data))
+            raise InvalidModbusFrame("Data too short (%s bytes)", len(data))
         byte_count = data[0]
         if len(data) != byte_count + 1:
-            raise InvalidModbusFrame('Unexpected number of data bytes (%s != %s)', len(data), byte_count)
-        expected_byte_count = self._last_read_input_registers_request['count'] * 2
+            raise InvalidModbusFrame("Unexpected number of data bytes (%s != %s)", len(data), byte_count)
+        expected_byte_count = self._last_read_input_registers_request["count"] * 2
         if expected_byte_count != byte_count:
-            self.warning('ignoring read input registers response with different address count')
+            self.warning("ignoring read input registers response with different address count")
             return
 
         values = []
-        for i in range(self._last_read_input_registers_request['count']):
-            value = int.from_bytes(data[i * 2 + 1: i * 2 + 3], byteorder='big', signed=False)
+        for i in range(self._last_read_input_registers_request["count"]):
+            value = int.from_bytes(data[i * 2 + 1 : i * 2 + 3], byteorder="big", signed=False)
             values.append(value)
-            self.set_input_register_value(self._last_read_input_registers_request['address'] + i, value)
+            self.set_input_register_value(self._last_read_input_registers_request["address"] + i, value)
 
-        self.debug('read input registers response (values = [%s])', ', '.join(f'0x{v:04X}' for v in values))
+        self.debug("read input registers response (values = [%s])", ", ".join(f"0x{v:04X}" for v in values))
 
         self._last_read_input_registers_request = None
 
@@ -317,4 +315,4 @@ class InternalPassiveClient(InternalModbusBaseClient, logging_utils.LoggableMixi
                 else:
                     crc >>= 1
 
-        return crc.to_bytes(2, byteorder='little', signed=False)
+        return crc.to_bytes(2, byteorder="little", signed=False)
