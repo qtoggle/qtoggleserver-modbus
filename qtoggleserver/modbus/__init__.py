@@ -4,4 +4,4 @@ from .client import ModbusSerialClient, ModbusTcpClient, PassiveModbusSerialClie
 __all__ = ["ModbusSerialClient", "ModbusTcpClient", "PassiveModbusSerialClient", "PassiveModbusTcpClient"]
 
 
-VERSION = "unknown"
+VERSION = "unknown-version"
