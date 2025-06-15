@@ -70,7 +70,7 @@ class InternalTcpDumpClient(InternalPassiveClient):
             text=True,
         ) as proc:
             # Set non-blocking read mode
-            fd = proc.stdout.fileno()  # noqa
+            fd = proc.stdout.fileno()
             flags = fcntl.fcntl(fd, fcntl.F_GETFL)
             fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
             line = ""
