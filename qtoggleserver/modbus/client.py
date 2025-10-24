@@ -4,15 +4,10 @@ import logging
 
 from typing import Any
 
-from pymodbus.client import (
-    AsyncModbusSerialClient as InternalAsyncModbusSerialClient,
-)
-from pymodbus.client import (
-    AsyncModbusTcpClient as InternalAsyncModbusTcpClient,
-)
+from pymodbus.client import AsyncModbusSerialClient as InternalAsyncModbusSerialClient
+from pymodbus.client import AsyncModbusTcpClient as InternalAsyncModbusTcpClient
 from pymodbus.client.base import ModbusBaseClient as InternalModbusBaseClient
 from pymodbus.pdu import ExceptionResponse
-
 from qtoggleserver.core import ports as core_ports
 from qtoggleserver.lib import polled
 from qtoggleserver.utils import json as json_utils

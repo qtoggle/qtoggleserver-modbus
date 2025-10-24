@@ -7,7 +7,6 @@ from typing import Any
 
 from pymodbus import Framer, bit_read_message, bit_write_message, register_read_message, register_write_message
 from pymodbus.client.base import ModbusBaseClient as InternalModbusBaseClient
-
 from qtoggleserver.utils import logging as logging_utils
 
 
