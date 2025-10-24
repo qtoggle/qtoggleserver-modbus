@@ -1,6 +1,6 @@
 import struct
 
-from typing import Optional, Union, cast
+from typing import cast
 
 from qtoggleserver.core import ports as core_ports
 from qtoggleserver.core.typing import NullablePortValue, PortValue
@@ -25,39 +25,39 @@ WRITABLE_MAPPING = {
 }
 
 STRUCT_TYPE_MAPPING = {
-    'b': int,
-    'B': int,
-    '?': bool,
-    'h': int,
-    'H': int,
-    'i': int,
-    'I': int,
-    'l': int,
-    'L': int,
-    'q': int,
-    'Q': int,
-    'n': int,
-    'N': int,
-    'e': float,
-    'f': float,
-    'd': float,
+    "b": int,
+    "B": int,
+    "?": bool,
+    "h": int,
+    "H": int,
+    "i": int,
+    "I": int,
+    "l": int,
+    "L": int,
+    "q": int,
+    "Q": int,
+    "n": int,
+    "N": int,
+    "e": float,
+    "f": float,
+    "d": float,
 }
 
 
 class ModbusClientPort(polled.PolledPort):
-    DEFAULT_VALUE_FMT = '>h'
+    DEFAULT_VALUE_FMT = ">h"
 
     def __init__(
         self,
         *,
         id: str,
         modbus_type: str,
-        address: Union[int, str],
+        address: int | str,
         length: int = 1,
-        writable: Optional[bool] = None,
-        register_group_fmt: Optional[str] = None,
+        writable: bool | None = None,
+        register_group_fmt: str | None = None,
         value_fmt: str = DEFAULT_VALUE_FMT,
-        **kwargs
+        **kwargs,
     ) -> None:
         if isinstance(address, str):
             address = int(address, base=0)
@@ -69,7 +69,7 @@ class ModbusClientPort(polled.PolledPort):
         self._modbus_type: str = modbus_type
         self._address: int = address
         self._length: int = length
-        self._register_group_fmt: str = register_group_fmt if register_group_fmt else f'>{"H" * length}'
+        self._register_group_fmt: str = register_group_fmt if register_group_fmt else f">{'H' * length}"
         self._value_fmt: str = value_fmt
 
         super().__init__(id=id, **kwargs)
@@ -84,7 +84,7 @@ class ModbusClientPort(polled.PolledPort):
         value_fmt = self._value_fmt
         values = []
         if self._modbus_type in (constants.MODBUS_TYPE_COIL, constants.MODBUS_TYPE_DISCRETE_INPUT):
-            group_fmt = value_fmt = '?'
+            group_fmt = value_fmt = "?"
             if self._modbus_type == constants.MODBUS_TYPE_COIL:
                 value = client.get_last_coil_value(self._address)
             else:
