@@ -62,10 +62,6 @@ class ModbusClientPort(polled.PolledPort):
         if isinstance(address, str):
             address = int(address, base=0)
 
-        # These will directly determine the port type & writable attributes
-        self._type: str = TYPE_MAPPING[modbus_type]
-        self._writable: bool = writable if writable is not None else WRITABLE_MAPPING[modbus_type]
-
         self._modbus_type: str = modbus_type
         self._address: int = address
         self._length: int = length
@@ -73,6 +69,10 @@ class ModbusClientPort(polled.PolledPort):
         self._value_fmt: str = value_fmt
 
         super().__init__(id=id, **kwargs)
+
+        # These will directly determine the port type & writable attributes
+        self._type = TYPE_MAPPING[modbus_type]
+        self._writable = writable if writable is not None else WRITABLE_MAPPING[modbus_type]
 
     def get_peripheral(self) -> BaseModbusClient:
         return cast(BaseModbusClient, super().get_peripheral())
