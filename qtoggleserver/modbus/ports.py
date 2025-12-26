@@ -96,7 +96,7 @@ class ModbusClientPort(polled.PolledPort):
             values = client.get_last_holding_register_values(self._address, self._length)
 
         if values is None:
-            return
+            return None
 
         value_bytes = struct.pack(group_fmt, *values)
         value = struct.unpack(value_fmt, value_bytes)[0]
