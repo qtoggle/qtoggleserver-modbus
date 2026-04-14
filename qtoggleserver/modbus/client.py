@@ -57,7 +57,7 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
                         j += 1
                 i += 1
 
-            self._lengths_by_type_and_address[modbus_type] = dict(lengths_by_address_items)
+            self._lengths_by_type_and_address[modbus_type] = lengths_by_address_items.copy()
 
         self._pymodbus_client: InternalModbusBaseClient | None = None
 
