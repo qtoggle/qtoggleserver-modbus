@@ -5,8 +5,9 @@ import math
 
 from typing import Any
 
-from pymodbus import Framer, bit_read_message, bit_write_message, register_read_message, register_write_message
+from pymodbus import FramerType
 from pymodbus.client.base import ModbusBaseClient as InternalModbusBaseClient
+from pymodbus.pdu import bit_read_message, bit_write_message, register_read_message, register_write_message
 from qtoggleserver.utils import logging as logging_utils
 
 
@@ -57,7 +58,7 @@ class InternalPassiveClient(InternalModbusBaseClient, logging_utils.LoggableMixi
         self._last_read_holding_registers_request: dict[str, Any] | None = None
         self._last_read_input_registers_request: dict[str, Any] | None = None
 
-        InternalModbusBaseClient.__init__(self, framer=Framer.RTU)
+        InternalModbusBaseClient.__init__(self, framer=FramerType.RTU, retries=3, on_connect_callback=None)
         logging_utils.LoggableMixin.__init__(self, "passive", logger)
 
     @abc.abstractmethod

@@ -2,10 +2,7 @@ import logging
 
 from typing import Any
 
-from pymodbus.framer.ascii_framer import ModbusAsciiFramer
-from pymodbus.framer.binary_framer import ModbusBinaryFramer
-from pymodbus.framer.rtu_framer import ModbusRtuFramer
-from pymodbus.framer.socket_framer import ModbusSocketFramer
+from pymodbus import FramerType
 
 
 class BaseModbus:
@@ -13,10 +10,9 @@ class BaseModbus:
     DEFAULT_UNIT_ID = 0
 
     FRAMERS_BY_METHOD = {
-        "ascii": ModbusAsciiFramer,
-        "rtu": ModbusRtuFramer,
-        "binary": ModbusBinaryFramer,
-        "socket": ModbusSocketFramer,
+        "ascii": FramerType.ASCII,
+        "rtu": FramerType.RTU,
+        "socket": FramerType.SOCKET,
     }
 
     def __init__(
