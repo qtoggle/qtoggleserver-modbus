@@ -7,7 +7,8 @@ from typing import Any
 
 from pymodbus import FramerType
 from pymodbus.client.base import ModbusBaseClient as InternalModbusBaseClient
-from pymodbus.pdu import bit_read_message, bit_write_message, register_read_message, register_write_message
+from pymodbus.pdu import bit_message, register_message
+from pymodbus.transport import CommParams
 from qtoggleserver.utils import logging as logging_utils
 
 
@@ -58,7 +59,15 @@ class InternalPassiveClient(InternalModbusBaseClient, logging_utils.LoggableMixi
         self._last_read_holding_registers_request: dict[str, Any] | None = None
         self._last_read_input_registers_request: dict[str, Any] | None = None
 
-        InternalModbusBaseClient.__init__(self, framer=FramerType.RTU, retries=3, on_connect_callback=None)
+        InternalModbusBaseClient.__init__(
+            self,
+            framer=FramerType.RTU,
+            retries=3,
+            comm_params=CommParams(),
+            trace_packet=None,
+            trace_pdu=None,
+            trace_connect=None,
+        )
         logging_utils.LoggableMixin.__init__(self, "passive", logger)
 
     @abc.abstractmethod
@@ -108,45 +117,43 @@ class InternalPassiveClient(InternalModbusBaseClient, logging_utils.LoggableMixi
     def set_holding_register_value(self, address: int, value: int) -> None:
         self._holding_register_values[address] = value
 
-    async def read_coils(
-        self, address: int, count: int = 1, slave: int = 0, **kwargs
-    ) -> bit_read_message.ReadCoilsResponse:
-        return bit_read_message.ReadCoilsResponse(values=[self.get_coil_value(address + i) for i in range(count)])
+    async def read_coils(self, address: int, count: int = 1, slave: int = 0, **kwargs) -> bit_message.ReadCoilsResponse:
+        return bit_message.ReadCoilsResponse(bits=[self.get_coil_value(address + i) for i in range(count)])
 
     async def read_discrete_inputs(
         self, address: int, count: int = 1, slave: int = 0, **kwargs
-    ) -> bit_read_message.ReadDiscreteInputsResponse:
-        return bit_read_message.ReadDiscreteInputsResponse(
-            values=[self.get_discrete_input_value(address + i) for i in range(count)]
+    ) -> bit_message.ReadDiscreteInputsResponse:
+        return bit_message.ReadDiscreteInputsResponse(
+            bits=[self.get_discrete_input_value(address + i) for i in range(count)]
         )
 
     async def read_input_registers(
         self, address: int, count: int = 1, slave: int = 0, **kwargs
-    ) -> register_read_message.ReadInputRegistersResponse:
-        return register_read_message.ReadInputRegistersResponse(
-            values=[self.get_input_register_value(address + i) for i in range(count)]
+    ) -> register_message.ReadInputRegistersResponse:
+        return register_message.ReadInputRegistersResponse(
+            registers=[self.get_input_register_value(address + i) for i in range(count)]
         )
 
     async def read_holding_registers(
         self, address: int, count: int = 1, slave: int = 0, **kwargs
-    ) -> register_read_message.ReadHoldingRegistersResponse:
-        return register_read_message.ReadHoldingRegistersResponse(
-            values=[self.get_holding_register_value(address + i) for i in range(count)]
+    ) -> register_message.ReadHoldingRegistersResponse:
+        return register_message.ReadHoldingRegistersResponse(
+            registers=[self.get_holding_register_value(address + i) for i in range(count)]
         )
 
     async def write_coil(
         self, address: int, value: bool, slave: int = 0, **kwargs
-    ) -> bit_write_message.WriteSingleCoilResponse:
+    ) -> bit_message.WriteSingleCoilResponse:
         raise InternalPassiveException("Operation not supported in passive mode")
 
     async def write_coils(
         self, address: int, values: list[bool], slave: int = 0, **kwargs
-    ) -> bit_write_message.WriteMultipleCoilsResponse:
+    ) -> bit_message.WriteMultipleCoilsResponse:
         raise InternalPassiveException("Operation not supported in passive mode")
 
     async def write_register(
         self, address: int, value: int | float | str, slave: int = 0, **kwargs
-    ) -> register_write_message.WriteSingleRegisterResponse:
+    ) -> register_message.WriteSingleRegisterResponse:
         raise InternalPassiveException("Operation not supported in passive mode")
 
     async def write_registers(
@@ -155,7 +162,7 @@ class InternalPassiveClient(InternalModbusBaseClient, logging_utils.LoggableMixi
         values: list[int | float | str],
         slave: int = 0,
         **kwargs,
-    ) -> register_write_message.WriteMultipleRegistersResponse:
+    ) -> register_message.WriteMultipleRegistersResponse:
         raise InternalPassiveException("Operation not supported in passive mode")
 
     def process_read_coils_request(self, data: bytes) -> None:

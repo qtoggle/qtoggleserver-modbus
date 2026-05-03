@@ -218,7 +218,7 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
         for i in range(length):
             value = values_by_address.get(address + i)
             if value is None:  # a single None value in the list makes the entire result None
-                return
+                return None
             values.append(value)
 
         return values
@@ -229,7 +229,7 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
         for i in range(length):
             value = values_by_address.get(address + i)
             if value is None:  # a single None value in the list makes the entire result None
-                return
+                return None
             values.append(value)
 
         return values
