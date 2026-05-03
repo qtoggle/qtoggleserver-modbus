@@ -117,42 +117,44 @@ class InternalPassiveClient(InternalModbusBaseClient, logging_utils.LoggableMixi
     def set_holding_register_value(self, address: int, value: int) -> None:
         self._holding_register_values[address] = value
 
-    async def read_coils(self, address: int, count: int = 1, slave: int = 0, **kwargs) -> bit_message.ReadCoilsResponse:
+    async def read_coils(
+        self, address: int, count: int = 1, device_id: int = 0, **kwargs
+    ) -> bit_message.ReadCoilsResponse:
         return bit_message.ReadCoilsResponse(bits=[self.get_coil_value(address + i) for i in range(count)])
 
     async def read_discrete_inputs(
-        self, address: int, count: int = 1, slave: int = 0, **kwargs
+        self, address: int, count: int = 1, device_id: int = 0, **kwargs
     ) -> bit_message.ReadDiscreteInputsResponse:
         return bit_message.ReadDiscreteInputsResponse(
             bits=[self.get_discrete_input_value(address + i) for i in range(count)]
         )
 
     async def read_input_registers(
-        self, address: int, count: int = 1, slave: int = 0, **kwargs
+        self, address: int, count: int = 1, device_id: int = 0, **kwargs
     ) -> register_message.ReadInputRegistersResponse:
         return register_message.ReadInputRegistersResponse(
             registers=[self.get_input_register_value(address + i) for i in range(count)]
         )
 
     async def read_holding_registers(
-        self, address: int, count: int = 1, slave: int = 0, **kwargs
+        self, address: int, count: int = 1, device_id: int = 0, **kwargs
     ) -> register_message.ReadHoldingRegistersResponse:
         return register_message.ReadHoldingRegistersResponse(
             registers=[self.get_holding_register_value(address + i) for i in range(count)]
         )
 
     async def write_coil(
-        self, address: int, value: bool, slave: int = 0, **kwargs
+        self, address: int, value: bool, device_id: int = 0, **kwargs
     ) -> bit_message.WriteSingleCoilResponse:
         raise InternalPassiveException("Operation not supported in passive mode")
 
     async def write_coils(
-        self, address: int, values: list[bool], slave: int = 0, **kwargs
+        self, address: int, values: list[bool], device_id: int = 0, **kwargs
     ) -> bit_message.WriteMultipleCoilsResponse:
         raise InternalPassiveException("Operation not supported in passive mode")
 
     async def write_register(
-        self, address: int, value: int | float | str, slave: int = 0, **kwargs
+        self, address: int, value: int | float | str, device_id: int = 0, **kwargs
     ) -> register_message.WriteSingleRegisterResponse:
         raise InternalPassiveException("Operation not supported in passive mode")
 
@@ -160,7 +162,7 @@ class InternalPassiveClient(InternalModbusBaseClient, logging_utils.LoggableMixi
         self,
         address: int,
         values: list[int | float | str],
-        slave: int = 0,
+        device_id: int = 0,
         **kwargs,
     ) -> register_message.WriteMultipleRegistersResponse:
         raise InternalPassiveException("Operation not supported in passive mode")

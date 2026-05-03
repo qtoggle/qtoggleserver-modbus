@@ -9,7 +9,7 @@ requires-python = ">=3.11"
 readme = "README.md"
 license = {text = "Apache 2.0"}
 dependencies = [
-    "pymodbus>=3.8",
+    "pymodbus>=3.13,<3.14",
     "pyserial>=3,<4",
 ]
 

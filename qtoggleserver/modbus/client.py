@@ -149,7 +149,7 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
             for address, length in lengths_by_address.items():
                 if modbus_type == constants.MODBUS_TYPE_COIL:
                     self.debug("reading %d coils at 0x%04X", length, address)
-                    response = await self._pymodbus_client.read_coils(address, count=length, slave=self.unit_id)
+                    response = await self._pymodbus_client.read_coils(address, count=length, device_id=self.unit_id)
                     if isinstance(response, ExceptionResponse):
                         raise Exception(f"Got Modbus erroneous response: {response}")
 
@@ -160,7 +160,7 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
                 elif modbus_type == constants.MODBUS_TYPE_DISCRETE_INPUT:
                     self.debug("reading %d discrete inputs at 0x%04X", length, address)
                     response = await self._pymodbus_client.read_discrete_inputs(
-                        address, count=length, slave=self.unit_id
+                        address, count=length, device_id=self.unit_id
                     )
                     if isinstance(response, ExceptionResponse):
                         raise Exception(f"Got Modbus erroneous response: {response}")
@@ -172,7 +172,7 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
                 elif modbus_type == constants.MODBUS_TYPE_INPUT_REGISTER:
                     self.debug("reading %d input registers at 0x%04X", length, address)
                     response = await self._pymodbus_client.read_input_registers(
-                        address, count=length, slave=self.unit_id
+                        address, count=length, device_id=self.unit_id
                     )
                     if isinstance(response, ExceptionResponse):
                         raise Exception(f"Got Modbus erroneous response: {response}")
@@ -184,7 +184,7 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
                 elif modbus_type == constants.MODBUS_TYPE_HOLDING_REGISTER:
                     self.debug("reading %d holding registers at 0x%04X", length, address)
                     response = await self._pymodbus_client.read_holding_registers(
-                        address, count=length, slave=self.unit_id
+                        address, count=length, device_id=self.unit_id
                     )
                     if isinstance(response, ExceptionResponse):
                         raise Exception(f"Got Modbus erroneous response: {response}")
@@ -237,9 +237,9 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
     async def write_coil_value(self, address: int, value: bool) -> None:
         self.debug("writing coil value %s to 0x%04X", json_utils.dumps(value), address)
         if self.use_single_functions:
-            await self._pymodbus_client.write_coil(address, value, slave=self.unit_id)
+            await self._pymodbus_client.write_coil(address, value, device_id=self.unit_id)
         else:
-            await self._pymodbus_client.write_coils(address, [value], slave=self.unit_id)
+            await self._pymodbus_client.write_coils(address, [value], device_id=self.unit_id)
 
         self._values_by_type_and_address.setdefault(constants.MODBUS_TYPE_COIL, {})[address] = value
 
@@ -248,9 +248,9 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
         self.debug("writing holding register values %s to 0x%04X", values_str, address)
         if self.use_single_functions:
             for value in values:
-                await self._pymodbus_client.write_register(address, value, slave=self.unit_id)
+                await self._pymodbus_client.write_register(address, value, device_id=self.unit_id)
         else:
-            await self._pymodbus_client.write_registers(address, values, slave=self.unit_id)
+            await self._pymodbus_client.write_registers(address, values, device_id=self.unit_id)
 
         for i, value in enumerate(values):
             self._values_by_type_and_address.setdefault(constants.MODBUS_TYPE_HOLDING_REGISTER, {})[address + i] = value
