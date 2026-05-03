@@ -57,7 +57,7 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
                         j += 1
                 i += 1
 
-            self._lengths_by_type_and_address[modbus_type] = lengths_by_address_items.copy()
+            self._lengths_by_type_and_address[modbus_type] = dict(lengths_by_address_items)
 
         self._pymodbus_client: InternalModbusBaseClient | None = None
 
@@ -164,7 +164,6 @@ class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMet
                     if isinstance(response, ExceptionResponse):
                         raise Exception(f"Got Modbus erroneous response: {response}")
 
-                    self.error("got erroneous response: %s", str(response))
                     values = response.bits
                     values_str = ", ".join(str(v) for v in values).lower()
                     self.debug("read discrete input values (%s) at 0x%04X", values_str, address)
