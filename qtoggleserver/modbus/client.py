@@ -271,6 +271,7 @@ class ModbusSerialClient(BaseModbusClient):
         serial_stopbits: int = DEFAULT_SERIAL_STOPBITS,
         serial_bytesize: int = DEFAULT_SERIAL_BYTESIZE,
         serial_parity: str = DEFAULT_SERIAL_PARITY,
+        handle_local_echo: bool = False,
         **kwargs,
     ) -> None:
         self.serial_port: str = serial_port
@@ -278,6 +279,7 @@ class ModbusSerialClient(BaseModbusClient):
         self.serial_stopbits: int = serial_stopbits
         self.serial_bytesize: int = serial_bytesize
         self.serial_parity: str = serial_parity
+        self.handle_local_echo: bool = handle_local_echo
 
         kwargs.setdefault("method", self.DEFAULT_METHOD)
 
@@ -292,6 +294,7 @@ class ModbusSerialClient(BaseModbusClient):
             stopbits=self.serial_stopbits,
             bytesize=self.serial_bytesize,
             parity=self.serial_parity,
+            handle_local_echo=self.handle_local_echo,
             timeout=self.timeout,
             framer=framer_cls,
         )

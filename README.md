@@ -29,7 +29,8 @@ peripherals = [
         serial_baud = 9600              # this is the default
         serial_stopbits = 1             # this is the default
         serial_bytesize = 8             # this is the default
-        serial_parity = N               # `N`, `E` or `O`
+        serial_parity = N               # `N`, `E` or `O` (defaults to `N`)
+        handle_local_echo = false       # this is the default
         # see below for common parameters
     }
     ...
@@ -51,7 +52,7 @@ peripherals = [
         serial_baud = 9600              # this is the default
         serial_stopbits = 1             # this is the default
         serial_bytesize = 8             # this is the default
-        serial_parity = N               # `N`, `E` or `O`
+        serial_parity = N               # `N`, `E` or `O` (defaults to `N`)
         # see below for common parameters
     }
     ...
@@ -110,7 +111,7 @@ peripherals = [
         serial_baud = 9600              # this is the default
         serial_stopbits = 1             # this is the default
         serial_bytesize = 8             # this is the default
-        serial_parity = N               # `N`, `E` or `O`
+        serial_parity = N               # `N`, `E` or `O` (defaults to `N`)
         # see below for common parameters
     }
     ...
@@ -154,14 +155,14 @@ peripherals = [
         ...
         name = "mydevice"  # an optional name of your choice
         timeout = 5        # in seconds, this is the default
-        unit_id = 0           # slave unit id, this is the default
+        unit_id = 1           # slave unit id, this is the default
         ports = {
             "port_id1" = {
                 modbus_type = coil          # `coil`, discrete_input`, `input_register` or `holding_register`
                 address = 1234              # Modbus port address (from `0000` to `9999`)
                 # number of successive registers mapped to the port, starting at `address` (defaults to `1`)
                 length = 2
-                writable = false            # by default is `null`, inferred from `modbus_type`
+                writable = false            # defaults to `null`, inferred from `modbus_type`
                 # `struct` format to use to group multiple register values into a byte array (defaults to `>` followed
                 # by `H` times `length`)
                 register_group_fmt = ">HH"
