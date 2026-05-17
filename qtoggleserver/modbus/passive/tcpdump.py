@@ -17,13 +17,14 @@ class InvalidIpv4Packet(InternalPassiveException):
 
 class InternalTcpDumpClient(InternalPassiveClient):
     _WORD_HEX_REGEX = re.compile(r"\s[a-f0-9]{2,4}")
+    DEFAULT_UNIT_ID = 1
 
     def __init__(
         self,
         *,
         port: int,
         iface: str | None = None,
-        unit_id: int = 0,
+        unit_id: int = DEFAULT_UNIT_ID,
         master_ip: str | None = None,
         slave_ip: str | None = None,
         master_port: int | None = None,

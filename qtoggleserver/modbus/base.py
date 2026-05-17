@@ -7,7 +7,7 @@ from pymodbus import FramerType
 
 class BaseModbus:
     DEFAULT_TIMEOUT = 10  # seconds
-    DEFAULT_UNIT_ID = 0
+    DEFAULT_UNIT_ID = 1
 
     FRAMERS_BY_METHOD = {
         "ascii": FramerType.ASCII,
