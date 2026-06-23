@@ -18,7 +18,7 @@ from .passive.serial import InternalSerialClient
 from .passive.tcpdump import InternalTcpDumpClient
 
 
-class BaseModbusClient(polled.PolledPeripheral, BaseModbus, metaclass=abc.ABCMeta):
+class BaseModbusClient(BaseModbus, polled.PolledPeripheral, metaclass=abc.ABCMeta):
     DEFAULT_POLL_INTERVAL = 5
 
     logger = logging.getLogger(__name__)
