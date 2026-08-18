@@ -20,6 +20,7 @@ from .passive.tcpdump import InternalTcpDumpClient
 
 class BaseModbusClient(BaseModbus, polled.PolledPeripheral, metaclass=abc.ABCMeta):
     DEFAULT_POLL_INTERVAL = 5
+    POLL_AFTER_WRITE = True
 
     logger = logging.getLogger(__name__)
 
@@ -241,8 +242,6 @@ class BaseModbusClient(BaseModbus, polled.PolledPeripheral, metaclass=abc.ABCMet
         else:
             await self._pymodbus_client.write_coils(address, [value], device_id=self.unit_id)
 
-        self._values_by_type_and_address.setdefault(constants.MODBUS_TYPE_COIL, {})[address] = value
-
     async def write_holding_register_values(self, address: int, values: list[int]) -> None:
         values_str = ", ".join(["%04X" % v for v in values])
         self.debug("writing holding register values %s to 0x%04X", values_str, address)
@@ -251,9 +250,6 @@ class BaseModbusClient(BaseModbus, polled.PolledPeripheral, metaclass=abc.ABCMet
                 await self._pymodbus_client.write_register(address, value, device_id=self.unit_id)
         else:
             await self._pymodbus_client.write_registers(address, values, device_id=self.unit_id)
-
-        for i, value in enumerate(values):
-            self._values_by_type_and_address.setdefault(constants.MODBUS_TYPE_HOLDING_REGISTER, {})[address + i] = value
 
 
 class ModbusSerialClient(BaseModbusClient):
