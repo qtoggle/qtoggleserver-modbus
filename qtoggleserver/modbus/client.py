@@ -14,6 +14,7 @@ from qtoggleserver.utils import json as json_utils
 
 from . import constants
 from .base import BaseModbus
+from .exceptions import ModbusException
 from .passive.serial import InternalSerialClient
 from .passive.tcpdump import InternalTcpDumpClient
 
@@ -107,8 +108,8 @@ class BaseModbusClient(BaseModbus, polled.PolledPeripheral, metaclass=abc.ABCMet
             try:
                 self._pymodbus_client.close()
             except Exception:
+                self.debug("client closing failed, probably already closed")
                 # We don't care if connection closing fails - we're going to recreate the client from scratch anyway
-                pass
             return False
 
         return True
@@ -119,7 +120,7 @@ class BaseModbusClient(BaseModbus, polled.PolledPeripheral, metaclass=abc.ABCMet
             self._pymodbus_client.close()
         except Exception:
             # We don't care if connection closing fails - we're going to recreate the client from scratch anyway
-            pass
+            self.debug("client closing failed, probably already closed")
 
         self._pymodbus_client = None
 
@@ -142,7 +143,7 @@ class BaseModbusClient(BaseModbus, polled.PolledPeripheral, metaclass=abc.ABCMet
 
     async def poll(self) -> None:
         if not await self.ensure_client():
-            raise Exception("Could not connect to Modbus unit")
+            raise ModbusException("Could not connect to Modbus unit")
 
         values_by_type_and_address: dict[str, dict[int, Any]] = {}
         for modbus_type, lengths_by_address in self._lengths_by_type_and_address.items():
@@ -151,7 +152,7 @@ class BaseModbusClient(BaseModbus, polled.PolledPeripheral, metaclass=abc.ABCMet
                     self.debug("reading %d coils at 0x%04X", length, address)
                     response = await self._pymodbus_client.read_coils(address, count=length, device_id=self.unit_id)
                     if isinstance(response, ExceptionResponse):
-                        raise Exception(f"Got Modbus erroneous response: {response}")
+                        raise ModbusException(f"Got Modbus erroneous response: {response}")
 
                     values = response.bits
                     if self.is_log_enabled(logging.DEBUG):
@@ -163,7 +164,7 @@ class BaseModbusClient(BaseModbus, polled.PolledPeripheral, metaclass=abc.ABCMet
                         address, count=length, device_id=self.unit_id
                     )
                     if isinstance(response, ExceptionResponse):
-                        raise Exception(f"Got Modbus erroneous response: {response}")
+                        raise ModbusException(f"Got Modbus erroneous response: {response}")
 
                     values = response.bits
                     if self.is_log_enabled(logging.DEBUG):
@@ -175,7 +176,7 @@ class BaseModbusClient(BaseModbus, polled.PolledPeripheral, metaclass=abc.ABCMet
                         address, count=length, device_id=self.unit_id
                     )
                     if isinstance(response, ExceptionResponse):
-                        raise Exception(f"Got Modbus erroneous response: {response}")
+                        raise ModbusException(f"Got Modbus erroneous response: {response}")
 
                     values = response.registers
                     if self.is_log_enabled(logging.DEBUG):
@@ -187,7 +188,7 @@ class BaseModbusClient(BaseModbus, polled.PolledPeripheral, metaclass=abc.ABCMet
                         address, count=length, device_id=self.unit_id
                     )
                     if isinstance(response, ExceptionResponse):
-                        raise Exception(f"Got Modbus erroneous response: {response}")
+                        raise ModbusException(f"Got Modbus erroneous response: {response}")
 
                     values = response.registers
                     if self.is_log_enabled(logging.DEBUG):
@@ -197,7 +198,7 @@ class BaseModbusClient(BaseModbus, polled.PolledPeripheral, metaclass=abc.ABCMet
                     continue
 
                 if len(values) < length:
-                    raise Exception("Unexpected number of values read: %s < %s", len(values), length)
+                    raise ModbusException(f"Unexpected number of values read: {len(values)} < {length}")
 
                 for i in range(length):
                     values_by_type_and_address.setdefault(modbus_type, {})[address + i] = values[i]
@@ -244,7 +245,7 @@ class BaseModbusClient(BaseModbus, polled.PolledPeripheral, metaclass=abc.ABCMet
         self._values_by_type_and_address.setdefault(constants.MODBUS_TYPE_COIL, {})[address] = value
 
     async def write_holding_register_values(self, address: int, values: list[int]) -> None:
-        values_str = ", ".join(["%04X" % v for v in values])
+        values_str = ", ".join([f"{v:04X}" for v in values])
         self.debug("writing holding register values %s to 0x%04X", values_str, address)
         if self.use_single_functions:
             for value in values:

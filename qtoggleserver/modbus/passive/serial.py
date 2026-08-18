@@ -59,7 +59,7 @@ class InternalSerialClient(InternalPassiveClient):
                     buffer += ser.read_all()
                     await asyncio.sleep(0.1)
                 if buffer:
-                    self.debug("sniffed %d bytes" % len(buffer))
+                    self.debug("sniffed %d bytes", len(buffer))
                     while True:
                         consumed_bytes = self._process_modbus_data(buffer)
                         if not consumed_bytes:

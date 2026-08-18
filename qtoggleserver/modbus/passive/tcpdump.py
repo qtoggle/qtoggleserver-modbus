@@ -64,7 +64,7 @@ class InternalTcpDumpClient(InternalPassiveClient):
     async def run(self) -> None:
         cmd = self.make_tcpdump_cmd()
         self.debug('running command "%s"', " ".join(cmd))
-        with subprocess.Popen(
+        with subprocess.Popen(  # noqa: ASYNC220 (fd is switched to O_NONBLOCK below; reads never actually block)
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
