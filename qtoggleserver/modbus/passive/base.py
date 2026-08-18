@@ -154,7 +154,7 @@ class InternalPassiveClient(InternalModbusBaseClient, logging_utils.LoggableMixi
         raise InternalPassiveException("Operation not supported in passive mode")
 
     async def write_register(
-        self, address: int, value: int | float | str, device_id: int = 0, **kwargs
+        self, address: int, value: float | str, device_id: int = 0, **kwargs
     ) -> register_message.WriteSingleRegisterResponse:
         raise InternalPassiveException("Operation not supported in passive mode")
 

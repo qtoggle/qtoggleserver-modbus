@@ -1,0 +1,2 @@
+class ModbusException(Exception):
+    pass
